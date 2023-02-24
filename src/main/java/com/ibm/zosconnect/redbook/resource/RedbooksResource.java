@@ -15,9 +15,7 @@
  */
 package com.ibm.zosconnect.redbook.resource;
 
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +44,7 @@ public class RedbooksResource {
         for (Redbook redbook : redbooks.values()) {
             List<String> authors = redbook.getAuthors();
             for (String author: authors) {
-                if (authorsBooks.containsKey(authors)) {
+                if (authorsBooks.containsKey(author)) {
                     Set<Redbook> books = authorsBooks.get(author);
                     books.add(redbook);
                 }
