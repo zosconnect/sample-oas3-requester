@@ -1,0 +1,4 @@
+language: COBOL
+requesterPrefix: RBK
+defaultCharacterMaxLength: 50
+defaultFractionDigits: 2

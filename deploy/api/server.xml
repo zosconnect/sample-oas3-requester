@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<server description="sampleApiRequesterRedbooks">
+
+    <!-- This server.xml is used to define a z/OS Connect server with an
+     IBM Redbook API installed. The same server also executes the API
+     endpoint application for simplicity. -->
+
+    <!-- Enable API requester feature for OAS defined RESTful endpoints -->
+    <featureManager>
+        <feature>zosconnect:oasRequester-1.0</feature>
+    </featureManager>
+
+    <!-- Enable http only for the sample -->
+    <httpEndpoint id="defaultHttpEndpoint"
+                  host="*"
+                  httpPort="9080" />
+
+    <!-- config requires updateTrigger="mbean" for REFRESH command support -->
+    <config updateTrigger="mbean"/>
+
+    <!-- applicationMonitor requires updateTrigger="mbean" for REFRESH command support -->
+    <applicationMonitor updateTrigger="mbean" dropinsEnabled="false"/>
+
+    <!-- Automatically expand WAR files and EAR files -->
+    <applicationManager autoExpand="true" />
+
+    <!-- API Requester generated war file -->
+    <webApplication location="${server.config.dir}/apps/RedbookApi.war">
+        <appProperties>
+            <property name="connectionRef" value="redbookConnection"/>
+        </appProperties>
+    </webApplication>
+
+    <!-- The Redbook API connection details -->
+    <zosconnect_endpointConnection id="redbookConnection"
+                                 host="http://localhost"
+                                 port="9080"/>
+
+    <!-- Implementation Redbook application war file  -->
+   <webApplication location="${server.config.dir}/apps/redbook-1.0.0.war" context-root="/" />
+
+    <!-- API requester trace settings if required -->
+    <!-- <logging traceSpecification="zosConnectApiRequester=all:zosConnectEndpointConnection=all:zosConnectMapping=all:zosConnectCore=all"/> -->
+
+</server>
