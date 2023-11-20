@@ -21,8 +21,9 @@
  * This build generates a remote endpoint API application war file and
  * generates the z/OS Connect API war file.
  *
- * The COBOL program BAQHRBKC is contained in the COBOL directory of the
- * project, this program must be moved to z/OS for compilation.
+ * The COBOL programs BAQHRBKC and BAQHRBKC are contained in the COBOL
+ * directory of the project, these programs must be moved to z/OS for
+ * compilation.
  *
  * The CSD directory contains a CICS TS CSD update file for the sample.
  */

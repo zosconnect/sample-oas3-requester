@@ -1,5 +1,5 @@
 # OpenAPI 3 API requester Sample
-A sample z/OS Connect API requester project showing how to call an OAS3 defined API from a CICS COBOL application.
+A sample z/OS Connect API requester project showing how to call an OAS3 defined API from a CICS COBOL and standalone COBOL application.
 
 ## Introduction
 This Redbook API requester sample implements a very simple IBM Redbook information application written in Java and hosted in Liberty. This application implements an OpenApi 3.0 described API. See the Sub Gradle project `RedbookApi` redbookapi.yaml file for a full description of the operations.
@@ -10,9 +10,9 @@ This project's gradle build will build the remote endpoint RedbookAPI applicatio
 Follow the instructions in the [IBM Documentation](https://www.ibm.com/docs/en/zos-connect/zos-connect/3.0?topic=gst-creating-cics-cobol-zos-connect-api-requester-application) for details on how to build, deploy and run this tutorial sample.
 
 ## Structure
-* The `COBOL`	directory contains the CICS COBOL program BAQHRBKC.
-* The `CSD` directory contains the CICS CSD file BAQHRBKD for the COBOL program.
-* The `deploy/api` directory contains	the sample server.xml for a Liberty server installed with z/OS Connect. This runs the z/OS Connect API requester WAR and the Redbook endpoint application WAR.
+* The `COBOL` directory contains the CICS COBOL program BAQHRBKC and the standalone COBOL application BAQHRBKZ.
+* The `CSD` directory contains the CICS CSD file BAQHRBKD necessary for configuring the CICS COBOL program to CICS.
+* The `deploy/api` directory contains the sample server.xml for a Liberty server installed with z/OS Connect. This runs the z/OS Connect API requester WAR and the Redbook endpoint application WAR.
 * The `RedbookApi` directory contains the API requester Gradle sub-project, called from the outer Gradle build file.
 * The `RedbookApi/src/main/api` directory contains the OpenAPI document, redbookapi.yaml, that describes the endpoint API application.
 * The `RedbookApi/src/main/config` directory contains	the options.yaml file used to control how the redbookapi.yaml file is processed to produce a z/OS Connect API requester WAR file.
@@ -42,11 +42,15 @@ An object schema with properties relating to IBM Red Book metadata.
 A simple object schema with a String message used to denote a Redbook is not found and an array of Redbook objects that the supplied author has written.
 
 ## CICS Resources
-### BAQHRBKC COBOL program
-The COBOL program BAQHRBKC is called for three transactions that then call the three different operations on the remote API endpoint.
+### BAQHRBKC CICS COBOL program
+The CICS COBOL program BAQHRBKC is called for three transactions that then call the three different operations on the remote API endpoint.
 
 ### CICS CSD BAQHRBKD
 A CSD update file to define the Transactions and Program definitions into group BAQHRBKG.
+
+## Standalone Resources
+### BAQHRBKZ COBOL program
+The COBOL program BAQHRBKZ can call one of the three RedbookAPI operations depending on the operation short code (GARB, GRBK or CRBK) passed to the program as a PARM value via JCL.
 
 ## License
 See `LICENSE` for details.

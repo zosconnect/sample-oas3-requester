@@ -4,34 +4,37 @@
       * Licensed under the Apache License, Version 2.0 (the "License");
       * you may not use this file except in compliance with the License.
       * You may obtain a copy of the License at
-      * 
+      *
       *     http://www.apache.org/licenses/LICENSE-2.0
-      * 
+      *
       * Unless required by applicable law or agreed to in writing
-      * , software distributed under the License is distributed on an 
+      * , software distributed under the License is distributed on an
       * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-      * either express or implied. See the License for the specific 
+      * either express or implied. See the License for the specific
       * language governing permissions and limitations under the
       * License.
       *****************************************************************
-      
+
       *****************************************************************
-      * BAQHRBKC                                                      *
+      * BAQHRBKZ                                                      *
       *                                                               *
-      * Install CSD Group BAQHRBKG                                    *
-      *                                                               *
-      * Processes Transactions:                                       *
+      * Operation Parameters:                                         *
       *      GARB - Get All Redbooks                                  *
       *      GRBK - Get Redbook                                       *
       *      CRBK - Create Redbook                                    *
       *                                                               *
-      * Calls RedbookAPI endpoint RESTful Application operations      *
-      * to process the Tx request.                                    *
+      * Pass in via JCL PARM statement, E.g:                          *
+      *    //RBKRUN EXEC PGM=BAQHRBKZ,PARM='GARB'                     *
+      *                                                               *
+      * Optionally specify DEBUG for more diagnostics, E.g:           *
+      *    //RBKRUN EXEC PGM=BAQHRBKZ,PARM='GARB DEBUG'               *
+      *                                                               *
+      * Calls RedbookAPI endpoint application operations.             *
       *                                                               *
       * Copyright IBM Corp. 2023                                      *
       *****************************************************************
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. BAQHRBKC.
+       PROGRAM-ID. BAQHRBKZ.
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
@@ -65,21 +68,7 @@
        COPY RBK02Q01.
 
       * Set DEBUG state, 1 for Tracing, 0 without.
-       01 WS-DEBUG           PIC 9 COMP VALUE 1.
-
-      * Set WS-URIMAP to the name of a defined CSD URIMAP that
-      * can be used to target a particular z/OS Connect instance.
-      * Leave as spaces to use the default z/OS Connect URIMAP.
-       01 WS-URIMAP          PIC X(8) VALUE SPACES.
-
-      * Tx cmdline input
-       01 WS-NETNAME         PIC X(8) VALUE ALL '?'.
-       01 WS-TERMINAL-INPUT.
-          03 WS-TX           PIC X(4).
-          03 FILLER          PIC X(1).
-          03 FILLER          PIC X(75) VALUE SPACES.
-
-       01 WS-TERMINAL-LENGTH PIC S9(4) BINARY.
+       01 WS-DEBUG           PIC 9 COMP VALUE 0.
 
       * The address of a returned Data Area Element
        01 WS-ELEMENT         USAGE POINTER VALUE NULL.
@@ -97,7 +86,7 @@
        01 WS-INDEX           PIC 9(9).
        01 WS-INDEX-2         PIC 9(9).
 
-      * Display this message to CICS log
+      * Display this message to standard out
        01 WS-DISPLAY-MSG     PIC X(78) VALUE ALL SPACES.
 
       * HTTP Status code
@@ -111,9 +100,18 @@
       * BAQ Call return code
        01 WS-BAQ-RC          PIC 9(8) COMP-5.
 
-
        LINKAGE SECTION.
-      * The API Response data structures are used within the
+
+      * Handle parameters passed in from JCL
+       01  PARM-BUFFER.
+          03  PARM-LENGTH       PIC S9(4) COMP.
+          03  PARM-DATA.
+             05 OPERATION       PIC X(4).
+             03 FILLER          PIC X(1).
+             03 DEBUG           PIC X(5) VALUE SPACES.
+             03 FILLER          PIC X(90).
+
+      * The API Response data structures are specified within the
       * LINKAGE-SECTION as the BAQ Host API owns and manages the storage
       * and not the application program.
 
@@ -126,73 +124,58 @@
       * Response structure for Operation getAllRedbooks
        COPY RBK02P01.
 
-
-       PROCEDURE DIVISION.
+       PROCEDURE DIVISION USING PARM-BUFFER.
       *----------------------------------------------------------------*
       * A-MAINLINE
       *----------------------------------------------------------------*
        A-MAINLINE SECTION.
        A-010.
+
+           IF PARM-LENGTH LESS THAN 4 THEN
+              DISPLAY 'PLEASE SPECIFY OPEARTION TO CALL AS PARAMETER'
+              DISPLAY 'VALID OPERATIONS ARE GARB, GRBK and CRBK'
+              STOP RUN
+           END-IF.
+
+           IF DEBUG = 'DEBUG' THEN
+              MOVE 1 TO WS-DEBUG.
+
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' A-MAINLINE Entry.'.
-
-           EXEC CICS ASSIGN
-                NETNAME(WS-NETNAME)
-           END-EXEC.
-
-           EXEC CICS RECEIVE INTO(WS-TERMINAL-INPUT)
-                             LENGTH(WS-TERMINAL-LENGTH)
-                             MAXLENGTH(80)
-           END-EXEC.
+              DISPLAY OPERATION ' A-MAINLINE Entry.'.
 
       * Initialise the BAQ Host API and acquire a connection to
       * a z/OS Connect server instance
-           PERFORM B-INIT-TX.
+           PERFORM B-INIT.
 
-      * If a connection was gained execute the Tx and make a BAQEXEC
-      * call to a remote endpoint API operation based on the Tx name
+      * If a connection was gained make a BAQEXEC call to a
+      * remote endpoint API operation
            IF WS-RC = OK
-              PERFORM C-EXECUTE-TX
+              PERFORM C-EXECUTE
 
       * Free any resources used by BAQEXEC
               PERFORM X-FREE
 
       * Terminate the BAQHAPI connection to the z/OS Connect server
-      * In CICS the allocated connection is returned to a pool
-      * and will be reused for the next request to the same z/OS Connect
-      * server instance.
               PERFORM X-TERM
            END-IF.
 
        A-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' A-MAINLINE Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' A-MAINLINE Exit. WS-RC=' WS-RC.
 
-           IF WS-NETNAME NOT EQUAL ALL '?'
-                 EXEC CICS SEND PAGE
-                      RETAIN
-                      LAST
-                      END-EXEC
-           END-IF.
-
-           EXEC CICS RETURN END-EXEC.
+           STOP RUN.
 
       *----------------------------------------------------------------*
-      * B-INIT-TX
+      * B-INIT
       *
-      * Initialise the program to execute the Tx
+      * Initialise the program to call the API
       *----------------------------------------------------------------*
-       B-INIT-TX SECTION.
+       B-INIT SECTION.
        B-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' B-INIT-TX Entry.'
+              DISPLAY OPERATION ' B-INIT Entry.'
 
            MOVE OK TO WS-RC.
-
-      * Set the CICS ABEND Handler
-           EXEC CICS HANDLE ABEND
-              LABEL(X-HANDLE-ABEND)
-           END-EXEC.
 
       * Initialise the Host API and get a conection to the z/OS Connect
       * server
@@ -200,41 +183,41 @@
 
        B-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' B-INIT-TX Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' B-INIT Exit. WS-RC=' WS-RC.
 
            EXIT.
 
       *----------------------------------------------------------------*
-      * C-EXECUTE-TX
+      * C-EXECUTE
       *
-      * Execute the given Tx
+      * Call the required API operation
       *----------------------------------------------------------------*
-       C-EXECUTE-TX SECTION.
+       C-EXECUTE SECTION.
        C-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' C-EXECUTE-TX Entry.'.
+              DISPLAY OPERATION ' C-EXECUTE Entry.'.
 
       *    GARB
-           IF EIBTRNID = 'GARB' THEN
+           IF OPERATION = 'GARB' THEN
               PERFORM CA-GET-ALL-REDBOOKS
 
       *    GRBK Title[, author ]
-           ELSE IF EIBTRNID = 'GRBK' THEN
+           ELSE IF OPERATION = 'GRBK' THEN
               PERFORM CB-GET-REDBOOK
 
       *    CRBK Title
-           ELSE IF EIBTRNID = 'CRBK' THEN
+           ELSE IF OPERATION = 'CRBK' THEN
               PERFORM CC-CREATE-REDBOOK
 
-      *    Unknown Tx
+      *    Unknown request
            ELSE
-              DISPLAY 'Tx ' EIBTRNID ' UNKNOWN'
+              DISPLAY 'Operation ' OPERATION ' UNKNOWN'
               MOVE FAILED TO WS-RC
            END-IF.
 
        C-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' C-EXECUTE-TX Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' C-EXECUTE Exit. WS-RC=' WS-RC.
 
            EXIT.
 
@@ -254,7 +237,7 @@
        CA-GET-ALL-REDBOOKS SECTION.
        CA-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CA-GET-ALL-REDBOOKS Entry.'.
+              DISPLAY OPERATION ' CA-GET-ALL-REDBOOKS Entry.'.
 
       * Prepare the request
            SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK02Q01.
@@ -267,7 +250,7 @@
       *
       * Ever wondered why some generated fields are prefix with 'X'?
       * It is because, as in this case, a clash exists with the
-      * languages reserved keyword list. AUTHOR is a COBOL keyword.
+      * language reserved keyword list. AUTHOR is a COBOL keyword.
            MOVE 0 TO Xauthor-existence of BAQBASE-RBK02Q01.
 
        CA-020.
@@ -281,7 +264,7 @@
       * Check that the call was successful, if not exit the section
       * Routine X-EXEC has displayed the error responses
            IF BAQ-ERROR THEN
-              DISPLAY EIBTRNID ' CA-GET-ALL-REDBOOKS BAQEXEC problem'
+              DISPLAY OPERATION ' CA-GET-ALL-REDBOOKS BAQEXEC problem'
               DISPLAY BAQ-ZCON-RETURN-MESSAGE
                        (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
               MOVE FAILED TO WS-RC
@@ -289,7 +272,7 @@
            END-IF.
 
            IF BAQ-WARNING THEN
-              DISPLAY EIBTRNID ' CA-GET-ALL-REDBOOKS BAQEXEC problem'
+              DISPLAY OPERATION ' CA-GET-ALL-REDBOOKS BAQEXEC problem'
               DISPLAY BAQ-RESP-STATUS-MESSAGE
                        (1:BAQ-RESP-STATUS-MESSAGE-LEN)
               MOVE FAILED TO WS-RC
@@ -329,7 +312,7 @@
            IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
               IF responseCode404-existence OF BAQBASE-RBK02P01 > 0 THEN
 
-      * The RESTFul API provided a RedbookNotFound response body
+      * The Redbook API provided a RedbookNotFound response body
       * in a Data Area, the name of that Data Area is located in
       * responseCode404-dataarea in the BAQBASE data structure.
       * Set this name in to WS-DATA-AREA-NAME and use the common
@@ -355,7 +338,8 @@
       * Data Area of authors Red Books, but for this operation this
       * array is not set
                  SET ADDRESS OF RBK02P01-responseCode404 TO WS-ELEMENT
-                 STRING EIBTRNID
+                 MOVE BAQ-RESP-STATUS-CODE TO WS-STATUS-CODE
+                 STRING OPERATION
                   ' EXEC RESTful EP return HTTP Status Code '
                   WS-STATUS-CODE
                   ' MESSAGE ' Xmessage OF RBK02P01-responseCode404
@@ -366,8 +350,7 @@
                  PERFORM X-WRITE-RESPONSE-MSG
               ELSE
       * 404 was returned but there is no RedbookNotFound response body
-                 MOVE BAQ-RESP-STATUS-CODE TO WS-STATUS-CODE
-                 STRING EIBTRNID
+                 STRING OPERATION
                    ' EXEC RESTful EP return HTTP Status Code '
                    WS-STATUS-CODE
                    ' NO Response Body'
@@ -387,11 +370,7 @@
            IF BAQ-RESP-STATUS-CODE = 200 THEN
               IF responseCode200-num OF BAQBASE-RBK02P01 > 0 THEN
 
-                 STRING EIBTRNID
-                   ' Red Book Inventory'
-                   DELIMITED BY SIZE
-                   INTO WS-DISPLAY-MSG
-                 PERFORM X-WRITE-RESPONSE-MSG
+                 DISPLAY OPERATION ' Red Book Inventory'
 
                  PERFORM CAA-GET-EACH-REDBOOK VARYING WS-INDEX
                     FROM 1 BY 1
@@ -399,17 +378,14 @@
                        responseCode200-num OF BAQBASE-RBK02P01 OR
                        WS-RC = FAILED
               ELSE
-                 STRING EIBTRNID
+                 DISPLAY OPERATION
                    ' EXEC RESTful EP - No Red Books returned'
-                   DELIMITED BY SIZE
-                   INTO WS-DISPLAY-MSG
-                 PERFORM X-WRITE-RESPONSE-MSG
               END-IF
            END-IF.
 
        CA-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CA-GET-ALL-REDBOOKS Exit. WS-RC='
+              DISPLAY OPERATION ' CA-GET-ALL-REDBOOKS Exit. WS-RC='
                       WS-RC.
 
            EXIT.
@@ -423,7 +399,7 @@
        CAA-GET-EACH-REDBOOK SECTION.
        CAA-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CAA-GET-EACH-REDBOOK Entry.'.
+              DISPLAY OPERATION ' CAA-GET-EACH-REDBOOK Entry.'.
 
            MOVE responseCode200-dataarea OF BAQBASE-RBK02P01 TO
                 WS-DATA-AREA-NAME.
@@ -440,21 +416,23 @@
            SET ADDRESS OF RBK02P01-responseCode200 to WS-ELEMENT.
 
       * For simplicity lets display the content of the Red Book data
-      * structure, but it would be better to return this data from the
-      * CICS Tx.
+      * structure
       *
       * Note that optional fields have an '-existence' field to denote
       * if the field exists or not.
 
-           DISPLAY EIBTRNID ' Red Book number ' WS-INDEX.
+           IF WS-DEBUG = 1 THEN
+               DISPLAY OPERATION ' Red Book number ' WS-INDEX.
 
-           STRING EIBTRNID ' Title '
-                 Xtitle OF RBK02P01-responseCode200
-                      (1:Xtitle-length OF RBK02P01-responseCode200)
-             DELIMITED BY SIZE
-             INTO WS-DISPLAY-MSG.
-
-           PERFORM X-WRITE-RESPONSE-MSG.
+           STRING OPERATION ' Title '
+             Xtitle OF RBK02P01-responseCode200
+                  (1:Xtitle-length OF RBK02P01-responseCode200)
+           DELIMITED BY SIZE
+           INTO WS-DISPLAY-MSG
+       
+      * Always display the book titles
+           DISPLAY WS-DISPLAY-MSG.
+           MOVE SPACES TO WS-DISPLAY-MSG.
 
       * Red Books typically have more than one author so these are
       * contained in an array in the OAS Redbook schema and thus
@@ -469,23 +447,24 @@
                  authors-num OF RBK02P01-responseCode200 OR
                  WS-RC = FAILED.
 
-           DISPLAY EIBTRNID ' Status '
+           IF WS-DEBUG = 1 THEN
+               DISPLAY OPERATION '  Status '
                  Xstatus OF RBK02P01-responseCode200
                       (1:Xstatus-length OF RBK02P01-responseCode200).
 
            IF publicationDate-existence
                  OF RBK02P01-responseCode200 > 0 THEN
 
-               DISPLAY EIBTRNID ' Publication Date '
-                  publicationDate2 OF RBK02P01-responseCode200
+               IF WS-DEBUG = 1 THEN
+                   DISPLAY OPERATION '  Publication Date '
+                   publicationDate2 OF RBK02P01-responseCode200
                  (1:publicationDate2-length OF RBK02P01-responseCode200)
+               END-IF
            END-IF.
-
-           DISPLAY EIBTRNID.
 
        CAA-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CAA-GET-EACH-REDBOOK Exit. WS-RC='
+              DISPLAY OPERATION ' CAA-GET-EACH-REDBOOK Exit. WS-RC='
                    WS-RC.
 
            EXIT.
@@ -499,7 +478,7 @@
        CAAA-GET-EACH-AUTHOR SECTION.
        CAAA-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CAAA-GET-EACH-AUTHOR Entry.'.
+              DISPLAY OPERATION ' CAAA-GET-EACH-AUTHOR Entry.'.
 
            MOVE authors-dataarea OF RBK02P01-responseCode200 TO
                 WS-DATA-AREA-NAME.
@@ -515,15 +494,17 @@
       * address of the 01 level data structure.
            SET ADDRESS OF RBK02P01-authors to WS-ELEMENT.
 
-           DISPLAY EIBTRNID ' Author ' WS-INDEX-2.
+           IF WS-DEBUG = 1 THEN
+               DISPLAY OPERATION '   Author ' WS-INDEX-2.
 
-           DISPLAY EIBTRNID ' '
+           IF WS-DEBUG = 1 THEN
+               DISPLAY OPERATION '    '
                  authors OF RBK02P01-authors
                       (1:authors-length OF RBK02P01-authors).
 
        CAAA-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CAAA-GET-EACH-AUTHOR Exit. WS-RC='
+              DISPLAY OPERATION ' CAAA-GET-EACH-AUTHOR Exit. WS-RC='
                    WS-RC.
 
            EXIT.
@@ -544,7 +525,7 @@
        CB-GET-REDBOOK SECTION.
        CB-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CB-GET-REDBOOK Entry.'.
+              DISPLAY OPERATION ' CB-GET-REDBOOK Entry.'.
 
 
       * Now its your turn!  We have seen from operation getAllRedbooks
@@ -597,7 +578,7 @@
 
       * Prepare the request for sending
            SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK00Q01.
-           MOVE LENGTH OF BAQBASE-RBK00Q01 TO BAQ-REQ-BASE-LENGTH.
+      *    MOVE LENGTH OF BAQBASE-RBK00Q01 TO BAQ-REQ-BASE-LENGTH.
 
       * TODO Set the title and title length in BAQBASE-RBK00Q01
 
@@ -614,7 +595,7 @@
 
       * TODO Successful call, address the base structure
       *      BAQBASE-RBK00P01
-           DISPLAY EIBTRNID ' TODO'.
+           DISPLAY OPERATION ' TODO'.
 
        CB-030.
       * TODO Process a 500 response code, in this case the response
@@ -625,7 +606,7 @@
       * 'return redbooks;' to test this logic and rebuild the
       * application and redeploy.
            IF BAQ-RESP-STATUS-CODE EQUAL 500 THEN
-               DISPLAY EIBTRNID ' TODO'
+               DISPLAY OPERATION ' TODO'
            END-IF.
 
        CB-040.
@@ -639,7 +620,7 @@
       *      exists of the authors Redbooks use it's Data Area to fetch
       *      each Red Book
            IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
-               DISPLAY EIBTRNID ' TODO'
+               DISPLAY OPERATION ' TODO'
            END-IF.
 
        CB-050.
@@ -647,9 +628,9 @@
       *      responseCode200-existence is 1 and if so use
       *      responseCode200-dataarea to get the returned Red Book
       *      in to data structure RBK00P01-responseCode200 and
-      *      display the content (or better yet return from the Tx)
+      *      display the content
            IF BAQ-RESP-STATUS-CODE = 200 THEN
-               DISPLAY EIBTRNID ' TODO'
+               DISPLAY OPERATION ' TODO'
            END-IF.
 
        CB-060.
@@ -662,11 +643,11 @@
       *      a text string or 2012 if the response is JSON.  The
       *      response is placed in BAQ-RESP-STATUS-MESSAGE (First 1024
       *      characters).
-           DISPLAY EIBTRNID ' TODO'.
+           DISPLAY OPERATION ' TODO'.
 
        CB-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CB-GET-REDBOOK Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' CB-GET-REDBOOK Exit. WS-RC=' WS-RC.
 
            EXIT.
 
@@ -686,7 +667,7 @@
        CC-CREATE-REDBOOK SECTION.
        CC-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CC-CREATE-REDBOOK Entry.'.
+              DISPLAY OPERATION ' CC-CREATE-REDBOOK Entry.'.
 
       * Even less help on this one!  Implement the COBOL code to call
       * operation createRedbook to create a new Red Book.
@@ -708,7 +689,7 @@
 
        CC-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' CC-CREATE-REDBOOK Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' CC-CREATE-REDBOOK Exit. WS-RC=' WS-RC.
 
            EXIT.
 
@@ -722,14 +703,7 @@
        X-INIT SECTION.
        X-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-INIT Entry.'.
-
-      * Initialise the Host API
-           IF WS-URIMAP NOT = '        ' THEN
-              MOVE BAQZ-SERVER-URIMAP TO BAQ-ZCON-PARM-NAME(1)
-              SET BAQ-ZCON-PARM-ADDRESS(1) TO ADDRESS OF WS-URIMAP
-              DISPLAY EIBTRNID ' URIMAP=' WS-URIMAP
-              MOVE 8 to BAQ-ZCON-PARM-LENGTH(1).
+              DISPLAY OPERATION ' X-INIT Entry.'.
 
            CALL BAQ-INIT-NAME USING BY REFERENCE BAQ-ZCONNECT-AREA
                               RETURNING WS-BAQ-RC.
@@ -737,25 +711,25 @@
            IF WS-BAQ-RC NOT = 0 THEN
               MOVE FAILED TO WS-RC
               MOVE WS-BAQ-RC TO WS-CC9
-              DISPLAY EIBTRNID ' INIT Return Code '
+              DISPLAY OPERATION ' INIT Return Code '
                 WS-CC9
-              DISPLAY EIBTRNID
-                      ' INIT See TDQ BAQH or CICS Trace for details '.
+              DISPLAY OPERATION
+                      ' INIT See STDOUT/STDERR for details '.
 
            MOVE BAQ-ZCON-COMPLETION-CODE TO WS-CC9.
            MOVE BAQ-ZCON-REASON-CODE TO WS-RC9.
 
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' INIT Completion Code '
+              DISPLAY OPERATION ' INIT Completion Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' INIT Reason Code '
+              DISPLAY OPERATION ' INIT Reason Code '
                 WS-RC9.
 
       * Check for bad initialisation
            IF NOT BAQ-SUCCESS THEN
               MOVE BAQ-ZCON-COMPLETION-CODE TO WS-CC9
               MOVE BAQ-ZCON-REASON-CODE TO WS-RC9
-              STRING EIBTRNID
+              STRING OPERATION
                  ' INIT failed'
                  ' CC=' WS-CC9
                  ' RC=' WS-RC9
@@ -772,7 +746,7 @@
 
        X-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-INIT Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' X-INIT Exit. WS-RC=' WS-RC.
 
            EXIT.
 
@@ -784,7 +758,7 @@
        X-EXEC SECTION.
        X-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-EXEC Entry.'.
+              DISPLAY OPERATION ' X-EXEC Entry.'.
 
            CALL BAQ-EXEC-NAME USING
                            BY REFERENCE BAQ-ZCONNECT-AREA
@@ -798,11 +772,11 @@
            MOVE BAQ-RESP-STATUS-CODE TO WS-ST9.
 
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' EXEC Completion Code '
+              DISPLAY OPERATION ' EXEC Completion Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' EXEC Reason Code '
+              DISPLAY OPERATION ' EXEC Reason Code '
                 WS-RC9
-              DISPLAY EIBTRNID ' EXEC HTTP Status Code '
+              DISPLAY OPERATION ' EXEC HTTP Status Code '
                 WS-ST9.
 
            IF NOT BAQ-SUCCESS THEN
@@ -815,7 +789,7 @@
                     MOVE 'API RETURN SEVERE ' TO WS-FAIL-TYPE
               END-EVALUATE
 
-              STRING EIBTRNID
+              STRING OPERATION
                  ' EXEC failed with '
                  WS-FAIL-TYPE
                  ' CC=' WS-CC9
@@ -825,17 +799,19 @@
 
               PERFORM X-WRITE-RESPONSE-MSG
 
-              DISPLAY EIBTRNID ' ' BAQ-ZCON-RETURN-MESSAGE
+              IF WS-DEBUG = 1 THEN
+                  DISPLAY OPERATION ' ' BAQ-ZCON-RETURN-MESSAGE
                         (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
+              END-IF
            ELSE
               IF WS-DEBUG = 1 THEN
-                 DISPLAY EIBTRNID ' EXEC Status Code '
+                 DISPLAY OPERATION ' EXEC Status Code '
                    BAQ-RESP-STATUS-CODE
            END-IF.
 
        X-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-EXEC Exit.'.
+              DISPLAY OPERATION ' X-EXEC Exit.'.
 
            EXIT.
 
@@ -848,7 +824,7 @@
        X-GET-DATA-AREA-ELEMENT SECTION.
        X-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-GET-DATA-AREA-ELEMENT '
+              DISPLAY OPERATION ' X-GET-DATA-AREA-ELEMENT '
                  WS-DATA-AREA-NAME
                  ' Entry.'.
 
@@ -862,21 +838,21 @@
            IF WS-BAQ-RC NOT = 0 THEN
               MOVE WS-BAQ-RC TO WS-CC9
               MOVE FAILED TO WS-RC
-              DISPLAY EIBTRNID ' GETN Return Code '
+              DISPLAY OPERATION ' GETN Return Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' GETN See CICS Trace for details '.
+              DISPLAY OPERATION ' GETN See STDOUT/STDERR for details'.
 
            MOVE BAQ-ZCON-COMPLETION-CODE TO WS-CC9.
            MOVE BAQ-ZCON-REASON-CODE TO WS-RC9.
 
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' GETN Completion Code '
+              DISPLAY OPERATION ' GETN Completion Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' GETN Reason Code '
+              DISPLAY OPERATION ' GETN Reason Code '
                 WS-RC9.
 
            IF NOT BAQ-SUCCESS THEN
-              STRING EIBTRNID
+              STRING OPERATION
                  ' GETN failed'
                  ' CC=' WS-CC9
                  ' RC=' WS-RC9
@@ -892,7 +868,7 @@
 
        X-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-GET-DATA-AREA-ELEMENT Exit. WS-RC='
+              DISPLAY OPERATION ' X-GET-DATA-AREA-ELEMENT Exit. WS-RC='
                  WS-RC.
 
            EXIT.
@@ -905,7 +881,7 @@
        X-FREE SECTION.
        X-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-FREE Entry.'.
+              DISPLAY OPERATION ' X-FREE Entry.'.
 
            CALL BAQ-FREE-NAME USING BY REFERENCE BAQ-ZCONNECT-AREA
                               RETURNING WS-BAQ-RC.
@@ -913,22 +889,22 @@
            IF WS-BAQ-RC NOT = 0 THEN
               MOVE FAILED TO WS-RC
               MOVE WS-BAQ-RC TO WS-CC9
-              DISPLAY EIBTRNID ' FREE Return Code '
+              DISPLAY OPERATION ' FREE Return Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' FREE See CICS Trace for details '.
+              DISPLAY OPERATION ' FREE See STDOUT/STDERR for details '.
 
            MOVE BAQ-ZCON-COMPLETION-CODE TO WS-CC9.
            MOVE BAQ-ZCON-REASON-CODE TO WS-RC9.
 
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' FREE Completion Code '
+              DISPLAY OPERATION ' FREE Completion Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' FREE Reason Code '
+              DISPLAY OPERATION ' FREE Reason Code '
                 WS-RC9.
 
       * Check for bad free
            IF NOT BAQ-SUCCESS THEN
-              STRING EIBTRNID
+              STRING OPERATION
                  ' FREE failed'
                  ' CC=' WS-CC9
                  ' RC=' WS-RC9
@@ -944,7 +920,7 @@
 
        X-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-FREE Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' X-FREE Exit. WS-RC=' WS-RC.
 
            EXIT.
 
@@ -956,7 +932,7 @@
        X-TERM SECTION.
        X-010.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-TERM Entry.'.
+              DISPLAY OPERATION ' X-TERM Entry.'.
 
       * Terminate the connection
            CALL BAQ-TERM-NAME USING BY REFERENCE BAQ-ZCONNECT-AREA
@@ -965,21 +941,21 @@
            IF WS-BAQ-RC NOT = 0 THEN
               MOVE FAILED TO WS-RC
               MOVE WS-BAQ-RC TO WS-CC9
-              DISPLAY EIBTRNID ' TERM Return Code '
+              DISPLAY OPERATION ' TERM Return Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' TERM See CICS Trace for details '.
+              DISPLAY OPERATION ' TERM See STDOUT/STDERR for details '.
 
            MOVE BAQ-ZCON-COMPLETION-CODE TO WS-CC9.
            MOVE BAQ-ZCON-REASON-CODE TO WS-RC9.
 
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' TERM Completion Code '
+              DISPLAY OPERATION ' TERM Completion Code '
                 WS-CC9
-              DISPLAY EIBTRNID ' TERM Reason Code '
+              DISPLAY OPERATION ' TERM Reason Code '
                 WS-RC9.
 
            IF NOT BAQ-SUCCESS THEN
-              STRING EIBTRNID
+              STRING OPERATION
                  ' TERM failed'
                  WS-FAIL-TYPE
                  ' CC=' WS-CC9
@@ -996,52 +972,16 @@
 
        X-999.
            IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-TERM Exit. WS-RC=' WS-RC.
+              DISPLAY OPERATION ' X-TERM Exit. WS-RC=' WS-RC.
 
            EXIT.
 
       *----------------------------------------------------------------*
-      * Handle CICS abend if not caught by RESP
-      *----------------------------------------------------------------*
-       X-HANDLE-ABEND SECTION.
-       X-010.
-           IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-HANDLE-ABEND Entry.'.
-
-           STRING 'Tx ' EIBTRNID ' ABENDED.' DELIMITED BY SIZE
-               INTO WS-DISPLAY-MSG.
-
-           PERFORM X-WRITE-RESPONSE-MSG.
-
-           DISPLAY EIBTRNID ' FAILED ABENDED'.
-
-      *    Free any resources used by BAQEXEC
-           PERFORM X-FREE.
-
-      *    Terminate the BAQHAPI connection
-           PERFORM X-TERM.
-
-           IF WS-DEBUG = 1 THEN
-              DISPLAY EIBTRNID ' X-HANDLE-ABEND Exit. WS-RC=' WS-RC.
-
-           EXEC CICS RETURN END-EXEC.
-
-      *----------------------------------------------------------------*
-      * Write messages to console
+      * Write messages to standard out
       *----------------------------------------------------------------*
        X-WRITE-RESPONSE-MSG SECTION.
        X-010.
-           IF WS-DEBUG = 1 THEN
-              DISPLAY WS-DISPLAY-MSG.
-
-           IF WS-NETNAME NOT EQUAL ALL '?'
-              EXEC CICS SEND TEXT
-                   FROM(WS-DISPLAY-MSG)
-                   LENGTH(78)
-                   TERMINAL
-                   ACCUM
-                   END-EXEC
-           END-IF.
+           DISPLAY WS-DISPLAY-MSG.
 
            MOVE SPACES TO WS-DISPLAY-MSG.
 
