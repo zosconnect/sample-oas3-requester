@@ -1,4 +1,5 @@
 language: COBOL
 requesterPrefix: RBK
+requesterExtension: cpy
 defaultCharacterMaxLength: 50
 defaultFractionDigits: 2

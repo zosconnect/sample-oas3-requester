@@ -107,9 +107,9 @@
           03  PARM-LENGTH       PIC S9(4) COMP.
           03  PARM-DATA.
              05 OPERATION       PIC X(4).
-             03 FILLER          PIC X(1).
-             03 DEBUG           PIC X(5) VALUE SPACES.
-             03 FILLER          PIC X(90).
+             05 FILLER          PIC X(1).
+             05 DEBUG           PIC X(5) VALUE SPACES.
+             05 FILLER          PIC X(90).
 
       * The API Response data structures are specified within the
       * LINKAGE-SECTION as the BAQ Host API owns and manages the storage
