@@ -107,9 +107,9 @@
           03  PARM-LENGTH       PIC S9(4) COMP.
           03  PARM-DATA.
              05 OPERATION       PIC X(4).
-             03 FILLER          PIC X(1).
-             03 DEBUG           PIC X(5) VALUE SPACES.
-             03 FILLER          PIC X(90).
+             05 FILLER          PIC X(1).
+             05 DEBUG           PIC X(5) VALUE SPACES.
+             05 FILLER          PIC X(90).
 
       * The API Response data structures are specified within the
       * LINKAGE-SECTION as the BAQ Host API owns and manages the storage
@@ -132,7 +132,7 @@
        A-010.
 
            IF PARM-LENGTH LESS THAN 4 THEN
-              DISPLAY 'PLEASE SPECIFY OPEARTION TO CALL AS PARAMETER'
+              DISPLAY 'PLEASE SPECIFY OPERATION TO CALL AS PARAMETER'
               DISPLAY 'VALID OPERATIONS ARE GARB, GRBK and CRBK'
               STOP RUN
            END-IF.
@@ -578,7 +578,7 @@
 
       * Prepare the request for sending
            SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK00Q01.
-      *    MOVE LENGTH OF BAQBASE-RBK00Q01 TO BAQ-REQ-BASE-LENGTH.
+           MOVE LENGTH OF BAQBASE-RBK00Q01 TO BAQ-REQ-BASE-LENGTH.
 
       * TODO Set the title and title length in BAQBASE-RBK00Q01
 
