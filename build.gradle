@@ -53,17 +53,10 @@ jar {
 
 war {
     dependsOn 'jar'
-    finalizedBy 'buildRequesterApiWar'
     archiveBaseName = 'redbook'
     archiveVersion = '1.0.0'
     inputs.files(fileTree('com.ibm.zosconnect.redbook'))
 }
-
-task buildRequesterApiWar(type: GradleBuild) {
-    buildFile = 'RedbookApi/build.gradle'
-    tasks = ['build']
-  }
-
 
 dependencies {
     implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'

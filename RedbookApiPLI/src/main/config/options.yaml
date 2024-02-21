@@ -1,0 +1,4 @@
+language: PLI
+requesterPrefix: RBK
+defaultCharacterMaxLength: 50
+defaultFractionDigits: 2

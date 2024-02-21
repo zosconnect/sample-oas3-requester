@@ -24,8 +24,14 @@
     <!-- Automatically expand WAR files and EAR files -->
     <applicationManager autoExpand="true" />
 
-    <!-- API Requester generated war file -->
+    <!-- API Requester generated war files (COBOL and PL/I) -->
     <webApplication location="${server.config.dir}/apps/RedbookApi.war">
+        <appProperties>
+            <property name="connectionRef" value="redbookConnection"/>
+        </appProperties>
+    </webApplication>
+
+    <webApplication location="${server.config.dir}/apps/RedbookApiPLI.war">
         <appProperties>
             <property name="connectionRef" value="redbookConnection"/>
         </appProperties>

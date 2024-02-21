@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-rootProject.name = 'com.ibm.zosconnect.apirequester.sample'
-include 'RedbookApi',
-        'RedbookApiPLI'
+pluginManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'RedbookApiPLI'
