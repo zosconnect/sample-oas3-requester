@@ -201,22 +201,6 @@
               PERFORM X-TERM
            END-IF.
 
-      * Initialise the BAQ Host API and acquire a connection to
-      * a z/OS Connect server instance
-           PERFORM B-INIT.
-
-      * If a connection was gained make a BAQEXEC call to a
-      * remote endpoint API operation
-           IF WS-RC = OK
-              PERFORM C-EXECUTE
-
-      * Free any resources used by BAQEXEC
-              PERFORM X-FREE
-
-      * Terminate the BAQHAPI connection to the z/OS Connect server
-              PERFORM X-TERM
-           END-IF.
-
        A-999.
            IF WS-DEBUG = 1 THEN
               DISPLAY OPERATION ' A-MAINLINE Exit. WS-RC=' WS-RC.
