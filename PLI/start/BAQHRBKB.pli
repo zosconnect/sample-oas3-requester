@@ -2,7 +2,7 @@
 *PROCESS NOT(!);
 *PROCESS DISPLAY(STD);
  /*********************************************************************
-  * Copyright IBM Corp. 2024
+  * Copyright IBM Corp. 2024, 2025
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -18,28 +18,32 @@
   * License.
   *********************************************************************/
 
- BAQHRBKZ: PROC(parm) options(MAIN);
+ BAQHRBKB: PROC() options(MAIN);
     /******************************************************************
-     * BAQHRBKZ                                                       *
+     * BAQHRBKB                                                       *
      *                                                                *
      * Operation Parameters:                                          *
      *      GARB - Get All Redbooks                                   *
      *      GRBK - Get Redbook                                        *
      *      CRBK - Create Redbook                                     *
      *                                                                *
-     * Pass in via JCL PARM statement, E.g:                           *
-     *    //RBKRUN EXEC PGM=BAQHRBKZ,PARM='GARB'                      *
+     * Pass in via JCL APARM statement, E.g:                          *
+     *    //RBKRUN EXEC PROC=IMSBATCH,                                *
+     *                  APARM='GARB'                                  *
      *                                                                *
      * Optionally specify DEBUG for more diagnostics, E.g:            *
-     *    //RBKRUN EXEC PGM=BAQHRBKZ,PARM='GARB DEBUG'                *
+     *    //RBKRUN EXEC PROC=IMSBATCH,                                *
+     *                  APARM='GARB DEBUG'                            *
      *                                                                *
      * Calls RedbookAPI endpoint application operations.              *
-     *                                                                *
      ******************************************************************/
 
     // API requester Host API required copy books
     %include BAQHAREP;
     %include BAQHCONP;
+
+    // IMS copybooks and constants
+    %include BAQHCIMS;
 
     // API_INFO for Operation getRedbook
     %include RBK00I01;
@@ -68,32 +72,35 @@
     // Response structure for Operation getAllRedbooks
     %include RBK02P01;
 
-
     // Holder of an API_INFO structure
-    DCL 01 api_info,
-           03 BAQ_API_INFO_EYE            CHAR(4) INIT('BAQA'),
-           03 BAQ_API_INFO_LENGTH         FIXED BIN(32) ALIGNED
-              INIT(1052) UNSIGNED,
-           03 BAQ_API_INFO_VERSION        FIXED BIN(32) ALIGNED
-              INIT(1) UNSIGNED,
-           03 BAQ_API_INFO_RESERVED01     FIXED BIN(32) ALIGNED
-              INIT(0) UNSIGNED,
-           03 BAQ_API_NAME                CHAR(255)
-              INIT(''),
-           03 BAQ_API_NAME_LEN            FIXED BIN(32) ALIGNED
-              INIT(0) UNSIGNED,
-           03 BAQ_API_PATH                CHAR(255)
-              INIT(''),
-           03 BAQ_API_PATH_LEN            FIXED BIN(32) ALIGNED
-              INIT(0) UNSIGNED,
-           03 BAQ_API_METHOD              CHAR(255)
-              INIT(''),
-           03 BAQ_API_METHOD_LEN          FIXED BIN(32) ALIGNED
-              INIT(0) UNSIGNED,
-           03 BAQ_API_OPERATION           CHAR(255)
-              INIT(''),
-           03 BAQ_API_OPERATION_LEN       FIXED BIN(32) ALIGNED
-              INIT(0) UNSIGNED;
+  DCL 01 api_info,
+         03 BAQ_API_INFO_EYE        CHAR(4) INIT('BAQA'),
+         03 BAQ_API_INFO_LENGTH     FIXED BIN(32) ALIGNED
+            INIT(1311) UNSIGNED,
+         03 BAQ_API_INFO_VERSION    FIXED BIN(32) ALIGNED
+            INIT(2) UNSIGNED,
+         03 BAQ_API_INFO_RESERVED01 FIXED BIN(32) ALIGNED
+            INIT(0) UNSIGNED,
+         03 BAQ_API_NAME            CHAR(255)
+            INIT(''),
+         03 BAQ_API_NAME_LEN        FIXED BIN(32) ALIGNED
+            INIT(0) UNSIGNED,
+         03 BAQ_API_PATH            CHAR(255)
+            INIT(''),
+         03 BAQ_API_PATH_LEN        FIXED BIN(32) ALIGNED
+            INIT(0) UNSIGNED,
+         03 BAQ_API_METHOD          CHAR(255)
+            INIT(''),
+         03 BAQ_API_METHOD_LEN      FIXED BIN(32) ALIGNED
+            INIT(0) UNSIGNED,
+         03 BAQ_API_OPERATION       CHAR(255)
+            INIT(''),
+         03 BAQ_API_OPERATION_LEN   FIXED BIN(32) ALIGNED
+            INIT(0) UNSIGNED,
+         03 BAQ_API_MEDIA_TYPE      CHAR(255)
+            INIT(''),
+         03 BAQ_API_MEDIA_TYPE_LEN  FIXED BIN(32) ALIGNED
+            INIT(0) UNSIGNED;
 
     // Data Area name to get
     DCL data_area_name          CHAR(16);
@@ -101,9 +108,8 @@
     // Set DEBUG state, 1 for Tracing, 0 without
     DCL debug                   UNSIGNED FIXED BIN(32) INIT(0);
 
-    // Handle parameters passed in from JCL
-    DCL parm                    CHAR(*) VARYING;
-    DCL 01 parm_buffer BASED(ADDR(parm)),
+    // Handle parameters passed in from APARM
+    DCL 01 parm_buffer,
            03 parm_length       FIXED BIN(15),
            03 parm_data,
               05 operation      CHAR(4),
@@ -123,7 +129,7 @@
     DCL OK                      UNSIGNED FIXED BIN(32) INIT(0);
     DCL FAILED                  UNSIGNED FIXED BIN(32) INIT(1);
 
-    // BAQ Call return code
+    // Call return code
     DCL baq_rc                  UNSIGNED FIXED BIN(32);
 
     // The address of a returned Data Area Element
@@ -132,6 +138,23 @@
     // Length of element for BAQGETN call
     DCL element_length          FIXED BIN(31) INIT(0);
 
+    // For IMS Parm Count
+    DCL THREE                   FIXED BIN(31) INIT(3);
+
+    // Obtain the APARM
+    AIB_CONTROL.AIB_LEN = SIZE(AIB_CONTROL);
+    AIB_CONTROL.AIB_OUT_AREA_LEN = SIZE(INQY_IO_AREA);
+    CALL AIBTDLI(THREE, DLI_INQY, AIB_CONTROL, INQY_IO_AREA);
+
+    IF (AIB_RETURN_CODE != 0) THEN DO;
+       DISPLAY('RETURN CODE = ' || AIB_RETURN_CODE);
+       DISPLAY('REASON CODE = ' || AIB_REASON_CODE);
+       RETURN;
+    END;
+
+    INQY_ENVIRON_FIELDS = INQY_ENVIRON_DATA;
+    parm_length = INQY_LEN_APARM;
+    parm_data =  INQY_APARM;
 
     /*----------------------------------------------------------------*
      * a_mainline
@@ -149,7 +172,7 @@
        DISPLAY(operation || ' a_mainline Entry.');
 
     /*
-     * Initialise the BAQ Host API and acquire a connection to
+     * Initialise the Host API and acquire a connection to
      * a z/OS Connect server instance
      */
     CALL b_init;
@@ -164,7 +187,7 @@
        // Free any resources used by BAQEXEC
        CALL x_free;
 
-       // Terminate the BAQHAPI connection to the z/OS Connect server
+       // Terminate the connection to the z/OS Connect server
        CALL x_term;
     END;
 
@@ -186,7 +209,7 @@
        rc = OK;
 
        /*
-        * Initialise the Host API and get a conection to the
+        * Initialise the Host API and get a connection to the
         * z/OS Connect server
         */
        call x_init;
@@ -236,7 +259,7 @@
      *
      * Sets the content of the BAQBASE_RBK02Q01 Request structure
      * ready for the BAQEXEC Call. The call is then made to the
-     * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+     * API End Point (EP) via BAQEXEC and the z/OS Connect server.
      *
      * Upon success, the BAQBASE_RBK02P01 structure is returned
      * and dependent of the EP HTTP Status Code a DATA AREA element
@@ -252,9 +275,9 @@
        BAQ_REQ_BASE_LENGTH = SIZE(BAQBASE_RBK02Q01);
 
        /*
-        * For this request we want to get all Red Book Inventory
+        * For this request we want to get all Redbook Inventory
         * and not the inventory for a particular author so we set
-        * the author_existence flag to 0 to tell the BAQHAPI that
+        * the author_existence flag to 0 to tell z/OS Connect that
         * the optional author parameter is not set.
         */
        BAQBASE_RBK02Q01.author_existence = 0;
@@ -262,18 +285,18 @@
        /*
         * Call the API
         * Passing the address of the API_INFO structure required for the
-        * BAQEXEC call. Section x_exec is a reuseable routine that is
+        * BAQEXEC call. Procedure x_exec is a reuseable routine that is
         * used for all API calls.
         */
        api_info = BAQ_API_INFO_RBK02I01;
        CALL x_exec;
 
        /*
-        * Check that the call was successful, if not exit the section
-        * Routine x_exec has displayed the error responses
+        * Check that the call was successful, if not exit
+        * Procedure x_exec has displayed the error responses
         */
        IF baq_rc = BAQ_ERROR THEN DO;
-          DISPLAY(operation || ' CA_GET_ALL_REDBOOKS BAQEXEC problem');
+          DISPLAY(operation || ' ca_get_all_redbooks BAQEXEC problem');
           DISPLAY(SUBSTR(BAQ_ZCON_RETURN_MESSAGE,
                          1, BAQ_ZCON_RETURN_MESSAGE_LEN));
           rc = FAILED;
@@ -281,7 +304,7 @@
        END;
 
        IF baq_rc = BAQ_ERROR THEN DO;
-          DISPLAY(operation || ' CA_GET_ALL_REDBOOKS BAQEXEC problem');
+          DISPLAY(operation || ' ca_get_all_redbooks BAQEXEC problem');
           DISPLAY(SUBSTR(BAQ_RESP_STATUS_MESSAGE,
                          1, BAQ_RESP_STATUS_MESSAGE_LEN));
           rc = FAILED;
@@ -289,13 +312,13 @@
        END;
 
        /*
-        * The BAQHAPI has successfully called remote endpoint API and
-        * that API has returned a HTTP status code that was defined in
-        * the Open API document for the called operation.  This could be
-        * an error HTTP status code, but as long as it is defined in the
-        * OAS document then BAQHAPI sees this as a successful call so
-        * now we must address the returned base structure and
-        * interrogate the returned responses in more detail
+        * z/OS Connect has successfully called the remote endpoint API and
+        * the API has returned an HTTP status code that was defined in the
+        * Open API document for the called operation. This could be an
+        * error HTTP status code, but as long as it is defined in the OAS
+        * document then z/OS Connect sees this as a successful call so now
+        * we must address the returned base structure and interrogate the
+        * returned responses in more detail
         *
         * The address of the returned BAQBASE structure is returned in
         * the BAQ_RESPONSE_AREA so set the structure to that address
@@ -321,7 +344,7 @@
 
        /*
         * Check the remote endpoint HTTP status code and check that a
-        * response was received, lets do the NOTFOUND case first.
+        * response was received, let's check the NOTFOUND case first.
         */
        IF BAQ_RESP_STATUS_CODE = 404 THEN DO;
           IF BAQBASE_RBK02P01.responseCode404_existence > 0 THEN DO;
@@ -348,18 +371,18 @@
               * Area that contains the RBK02P01_responseCode404 data
               * structure.  Lets address that and display the returned
               * message which should indicate that there are no
-              * Red Books in the repository.
+              * Redbooks in the repository.
               *
               * The RBK02P01_responseCode404 also contains a dynamic
-              * array Data Area of authors Red Books, but for this
+              * array Data Area of authors Redbooks, but for this
               * operation this array is not set
               */
 
              RBK02P01_responseCode404_PTR = element;
              display_message = operation ||
-                ' EXEC RESTful EP return HTTP Status Code ' ||
+                ' API EP returned HTTP Status Code ' ||
                 BAQ_RESP_STATUS_CODE ||
-                ' MESSAGE ' || RBK02P01_responseCode404.message;
+                '. MESSAGE ' || RBK02P01_responseCode404.message;
 
              CALL x_write_response_msg;
           END;
@@ -369,9 +392,9 @@
               * response body
               */
              display_message = operation ||
-                ' EXEC RESTful EP return HTTP Status Code ' ||
+                ' API EP returned HTTP Status Code ' ||
                 BAQ_RESP_STATUS_CODE ||
-                ' NO Response Body';
+                '. NO Response Body';
 
              CALL x_write_response_msg;
           END;
@@ -387,7 +410,7 @@
        IF BAQ_RESP_STATUS_CODE = 200 THEN DO;
           IF BAQBASE_RBK02P01.responseCode200_num > 0 THEN DO;
              display_message = operation ||
-                ' Red Book Inventory';
+                ' Redbook Inventory';
              CALL x_write_response_msg;
 
              DO i = 1 TO BAQBASE_RBK02P01.responseCode200_num BY 1
@@ -397,7 +420,7 @@
           END;
           ELSE DO;
              display_message = operation ||
-                ' EXEC RESTful EP - No Red Books returned';
+                ' EXEC API EP - No Redbooks returned';
              CALL x_write_response_msg;
           END;
        END;
@@ -412,7 +435,7 @@
      * caa_get_each_redbook
      *
      * Gets each book returned by the remote End Point Service by using
-     * BAQGETN (Get Next) and displays the Red Book details.
+     * BAQGETN (Get Next) and displays the Redbook details.
      *----------------------------------------------------------------*/
     caa_get_each_redbook: PROC(i);
        DCL i UNSIGNED FIXED BIN(32);
@@ -431,13 +454,13 @@
        IF rc = FAILED THEN GO TO caa_999;
 
        /*
-        * We have fetched the Red Book from the Data Area so set the
+        * We have fetched the Redbook from the Data Area so set the
         * address of the 01 level data structure.
         */
        RBK02P01_responseCode200_PTR = element;
 
        /*
-        * For simplicity lets display the content of the Red Book data
+        * For simplicity lets display the content of the Redbook data
         * structure.
         *
         * Note that optional fields have an '_existence' field to denote
@@ -445,7 +468,7 @@
         */
 
        IF debug = 1 THEN
-          DISPLAY(operation || ' Red Book number ' || i);
+          DISPLAY(operation || ' Redbook number ' || i);
 
        display_message = operation || ' Title ' ||
           RBK02P01_responseCode200.title;
@@ -453,13 +476,13 @@
        CALL x_write_response_msg;
 
        /*
-        * Red Books typically have more than one author so these are
+        * Redbooks typically have more than one author so these are
         * contained in an array in the OAS Redbook schema and thus
-        * returned in a dynamic Data Area.  If the OAS Schema defined a
+        * returned in a dynamic Data Area. If the OAS Schema defined a
         * 'maxItems' and this is less than the property
-        * 'inlineMaxOccursLimit' set in the Gradle Plugin options.yaml
-        * then the array would be inlined in the Red Book data
-        * structure.  But here we use a dynamic length array again.
+        * 'inlineMaxOccursLimit', set in the Gradle Plugin options.yaml,
+        * then the array would be inlined in the Redbook data
+        * structure. But here we use a dynamic length array again.
         */
        DO j = 1 TO RBK02P01_responseCode200.authors_num BY 1
                 WHILE (rc = OK);
@@ -533,7 +556,7 @@
      *
      * Sets the content of the BAQBASE_RBK00Q01 Request structure
      * ready for the BAQEXEC Call. The call is then made to the
-     * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+     * API End Point (EP) via BAQEXEC and the z/OS Connect server.
      *
      * Upon success, the BAQBASE_RBK00P01 structure is returned
      * and dependent of the EP HTTP Status Code a DATA AREA element
@@ -545,7 +568,7 @@
           DISPLAY(operation || ' cb_get_redbook Entry');
 
        /*
-        * Now its your turn!  We have seen from operation getAllRedbooks
+        * Now its your turn! We have seen from operation getAllRedbooks
         * how to send a request to a remote end point API using
         * z/OS Connect to handle the JSON to COBOL language structure
         * transformation and to process the response using Data Areas
@@ -559,14 +582,14 @@
         * data structure BAQBASE_RBK00Q01 and possibly an author.
         *
         * If an author is supplied and title cannot be located in the
-        * Red Book inventory then the API will return an array of
+        * Redbook inventory then the API will return an array of
         * Redbooks that the supplied author has written.  Please refer
         * to Java endpoint API program class RedbooksResource.java to
         * see the test data used in this simple Redbook Api application.
         *
         * If you want to test out the title not found function with a
         * supplied author then please use the author name
-        * 'Lydia Parziale' who has two Red Books in the inventory, and
+        * 'Lydia Parziale' who has two Redbooks in the inventory, and
         * some title that does not exist.
         *
         * The getRedbook opertion defines three HTTP Responses
@@ -578,7 +601,7 @@
         * for this operation RBK00P01 structures will contain the
         * response as generated by the Gradle Plugin.
         *
-        * Note that getRedbook returns a single Red Book not an array
+        * Note that getRedbook returns a single Redbook not an array
         * so tha will be simpler to implement.
         *
         * For the 500 - Internal Server Error response this has been
@@ -645,7 +668,7 @@
         *
         *      If authorsBooks_num is > 0 then a dynamic length
         * Data Area exists of the authors Redbooks use its Data Area to
-        * fetch each Red Book
+        * fetch each Redbook
         */
        IF BAQ_RESP_STATUS_CODE = 404 THEN DO;
           DISPLAY(operation || ' TODO');
@@ -653,9 +676,9 @@
 
        //cb_050.
        /*
-        * TODO Process the returned Red Book, check the
+        * TODO Process the returned Redbook, check the
         *      responseCode200_existence is 1 and if so use
-        *      responseCode200_dataarea to get the returned Red Book
+        *      responseCode200_dataarea to get the returned Redbook
         *      in to data structure RBK00P01_responseCode200 and
         *      display the content (or better yet return from the Tx)
         */
@@ -667,7 +690,7 @@
        /*
         * TODO We have processed the 3 possible HTTP Status Codes
         *      defined in the OAS redbookapi.yaml document, but what
-        *      happens if the remote endpoint API returned an undefined
+        *      happens if the remote endpoint API EP returned an undefined
         *      HTTP status code, a 409-CONFLICT for example?  In this
         *      case BAQEXEC will return a Completion Code of BAQ_WARNING
         *      with BAQ_ZCON_REASON_CODE set to 2011 if the response is
@@ -691,7 +714,7 @@
      *
      * Sets the content of the BAQBASE_RBK01Q01 Request structure
      * ready for the BAQEXEC Call. The call is then made to the
-     * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+     * API End Point (EP) via BAQEXEC and the z/OS Connect server.
      *
      * Upon success, the BAQBASE_RBK01P01 structure is returned
      * and dependent of the EP HTTP Status Code a DATA AREA element
@@ -704,13 +727,13 @@
 
       /*
        * Even less help on this one!  Implement the COBOL code to call
-       * operation createRedbook to create a new Red Book.
+       * operation createRedbook to create a new Redbook.
        * The redbookapi.yaml file describes the createRedbook operation
        * noting the required parameter, the request body and the
        * responses.  The BAQBASE_RBK01Q01 language structure defines
        * the COBOL language structure that has fields for the parameter
        * and the request body. These need to be completed.
-       * make the BAQEXEC call and process the response whcich will be
+       * make the BAQEXEC call and process the response which will be
        * either 409-CONFLICT, i.e. the Redbook already exists, or 2XX.
        * Here 2XX is used as a wild card to cover any 2nn HTTP status
        * code returned from the remote endpiont API.  For a create type
@@ -720,7 +743,7 @@
        * the response will be accessed via BAQBASE_RBK01P01.
        */
 
-       // TODO Create a new Red Book.
+       // TODO Create a new Redbook.
 
  cc_999:
        IF debug = 1 THEN
@@ -733,7 +756,7 @@
      *
      * Initialize z/OS Connect call by calling BAQINIT this will
      * acquire a connection to a z/OS Connect server and initialise
-     * the BAQ Host API ready for communication.
+     * the Host API ready for communication.
      *----------------------------------------------------------------*/
     x_init: PROC;
 
@@ -855,8 +878,11 @@
     /*----------------------------------------------------------------*
      * x_get_data_area_element
      *
-     * Gets each book returned by the End Point Service by using
-     * BAQGETN (Get Next) and displays the book details.
+     * Gets a Data Element from the Data Area named in the variable 
+     * data_area_name using length element_length.
+     * 
+     * Calls BAQGETN (Get Next) which sets element_ptr to the address
+     * of the data element retrieved.
      *----------------------------------------------------------------*/
     x_get_data_area_element: PROC(data_area_name, element_ptr,
                                   element_length);

@@ -39,7 +39,7 @@ public class RedbookResource {
 
 
     /**
-     * Returns the Red Book for the given title, if the author is supplied and the Red Book cannot be
+     * Returns the Redbook for the given title, if the author is supplied and the Redbook cannot be
      * located a list of all the authors works are returned.
      *
      * @param title
@@ -55,7 +55,7 @@ public class RedbookResource {
         if (author != null) {
             Set<Redbook> authorsRedbooks = RedbooksResource.getInventory(author);
             if (authorsRedbooks == null || authorsRedbooks.isEmpty()) {
-                RedbookNotFound noRedbook = new RedbookNotFound("No Redbooks located for author " + author +".");
+                RedbookNotFound noRedbook = new RedbookNotFound("No Redbooks located for author.");
                 System.out.println(noRedbook);
                 return Response.status(Status.NOT_FOUND).entity(noRedbook).build();
             }
@@ -65,7 +65,7 @@ public class RedbookResource {
                     collect(Collectors.toList());
 
             if (filteredRedbooks.size() == 0) {
-                RedbookNotFound noRedbook = new RedbookNotFound("No Redbooks located for author " + author +", authors works returned.");
+                RedbookNotFound noRedbook = new RedbookNotFound("No Redbooks located for author, works returned.");
                 noRedbook.setAuthorsWorks(new ArrayList<Redbook>(authorsRedbooks));
                 System.out.println(noRedbook);
                 return Response.status(Status.NOT_FOUND).entity(noRedbook).build();
@@ -85,13 +85,13 @@ public class RedbookResource {
             return Response.ok().entity(inventory.get(title)).build();
         }
 
-        RedbookNotFound noBook = new RedbookNotFound("Redbook " + title + " is not located in inventory.");
+        RedbookNotFound noBook = new RedbookNotFound("Redbook is not located in inventory.");
         System.out.println(noBook);
         return Response.status(Status.NOT_FOUND).entity(noBook).build();
     }
 
     /**
-     * Creates a new Red Book in inventory.
+     * Creates a new Redbook in inventory.
      *
      * If the title already exists it is returned as a 409 (CONFLICT)
      *

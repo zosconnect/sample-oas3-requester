@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * A model class that represent the metadata of an IBM Red Book
+ * A model class that represent the metadata of an IBM Redbook
  */
 public class Redbook {
 
@@ -43,6 +43,8 @@ public class Redbook {
     private double sizeMB;
 
     private URL url;
+
+    public Redbook(){}
 
     public Redbook(String title, List<String> authors, String formNumber, String type) {
         this.title = title;
@@ -112,17 +114,14 @@ public class Redbook {
 
     public void setStatus(Status status) {
         this.status = status;
-
     }
 
     public DocumentType getDocumentType() {
         return documentType;
-
     }
 
     public void setDocumentType(DocumentType documentType) {
         this.documentType = documentType;
-
     }
 
     @Override

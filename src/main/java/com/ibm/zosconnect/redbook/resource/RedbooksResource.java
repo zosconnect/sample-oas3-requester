@@ -58,7 +58,7 @@ public class RedbooksResource {
     }
 
     /**
-     * Gets the main inventory of all Red Books
+     * Gets the main inventory of all Redbooks
      * @return
      */
     public static Map<String, Redbook> getInventory() {
@@ -66,7 +66,7 @@ public class RedbooksResource {
     }
 
     /**
-     * Gets the inventory of all Red Books written by a particular author
+     * Gets the inventory of all Redbooks written by a particular author
      * @return
      */
     public static Set<Redbook> getInventory(String author) {
@@ -91,7 +91,7 @@ public class RedbooksResource {
 
         Set<Redbook> redbookSet = authorsBooks.get(author);
         if (redbookSet == null || redbookSet.isEmpty()) {
-            RedbookNotFound noRedbook = new RedbookNotFound("No Redbooks located for author " + author +".");
+            RedbookNotFound noRedbook = new RedbookNotFound("No Redbooks located for author.");
             System.out.println(noRedbook);
             return Response.status(Status.NOT_FOUND).entity(noRedbook).build();
         }

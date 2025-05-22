@@ -1,5 +1,5 @@
       *****************************************************************
-      * Copyright IBM Corp. 2024
+      * Copyright IBM Corp. 2024, 2025
       *
       * Licensed under the Apache License, Version 2.0 (the "License");
       * you may not use this file except in compliance with the License.
@@ -16,28 +16,26 @@
       *****************************************************************
 
       *****************************************************************
-      * BAQHRBKT                                                      *
-      *                                                               *
-      * Calls RedbookAPI endpoint application operations.             *
+      * BAQHRBKB                                                      *
       *                                                               *
       * Operation Parameters:                                         *
       *      GARB - Get All Redbooks                                  *
       *      GRBK - Get Redbook                                       *
       *      CRBK - Create Redbook                                    *
       *                                                               *
-      * Pass in via transaction message, E.g:                         *
-      *    QUE TRAN NAME(BAQHRBKT) OPTION(ENQ) DATA(GARB)             *
+      * Pass in via JCL APARM statement, E.g:                         *
+      *    //RBKRUN EXEC PROC=IMSBATCH,                               *
+      *                  APARM='GARB'                                 *
       *                                                               *
       * Optionally specify DEBUG for more diagnostics, E.g:           *
-      *    QUE TRAN NAME(BAQHRBKT) OPTION(ENQ) DATA(GARB DEBUG)       *
+      *    //RBKRUN EXEC PROC=IMSBATCH,                               *
+      *                  APARM='GARB DEBUG'                           *
       *                                                               *
       * Calls RedbookAPI endpoint application operations.             *
-      *                                                               *
-      * Copyright IBM Corp. 2024                                      *
       *****************************************************************
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. BAQHRBKT.
-       
+       PROGRAM-ID. BAQHRBKB.
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
@@ -102,30 +100,22 @@
        77 OK                 PIC 9 VALUE 0.
        77 FAILED             PIC 9 VALUE 1.
 
-      * BAQ Call return code
+      * Call return code
        01 WS-BAQ-RC          PIC 9(8) COMP-5.
 
-      * Handle parameters passed in to the transaction
+      * Handle parameters passed in from APARM
        01 PARM-BUFFER.
-           03 PARM-LENGTH   PIC S9(3) COMP VALUE 32.
-           03 PARM-ZEROES   PIC S9(3) COMP VALUE ZERO.
-           03 PARM-DATA.
-             05 TRAN-NAME      PIC X(8) VALUE SPACES.
-             05 FILLER         PIC X(1).
-             05 OPERATION      PIC X(4) VALUE SPACES.
-             05 FILLER         PIC X(1).
-             05 DEBUG          PIC X(5) VALUE SPACES.
-             05 FILLER         PIC X(11).
-
-       01 TEMP-PTR USAGE POINTER VALUE NULL.
-      
-       77  CEE3DLY             PIC X(8) VALUE 'CEE3DLY'.
-       01  SECONDS             PIC S9(9) COMP-5.
+          03  PARM-LENGTH       PIC S9(4) COMP.
+          03  PARM-DATA.
+             05 OPERATION       PIC X(4).
+             05 FILLER          PIC X(1).
+             05 DEBUG           PIC X(5) VALUE SPACES.
+             05 FILLER          PIC X(90).
 
        LINKAGE SECTION.
 
       * The API Response data structures are specified within the
-      * LINKAGE-SECTION as the BAQ Host API owns and manages the storage
+      * LINKAGE-SECTION as the Host API owns and manages the storage
       * and not the application program.
 
       * Response structure for Operation getRedbook
@@ -137,55 +127,42 @@
       * Response structure for Operation getAllRedbooks
        COPY RBK02P01.
 
-      * IO Program Control Block - interface to IMS message queue
-      * IOPCB implies using the queue
-      * LTERM-NAME is the name of the transaction. 
-      * TPSTATUS is the return code
-       01  IOPCB.
-           02  LTERM-NAME   PIC X(8).
-           02  FILLER       PIC X(2).
-           02  TPSTATUS     PIC XX.
-           02  FILLER       PIC X(20).
-
-       PROCEDURE DIVISION USING IOPCB.
+       PROCEDURE DIVISION.
       *----------------------------------------------------------------*
       * A-MAINLINE
       *----------------------------------------------------------------*
        A-MAINLINE SECTION.
        A-010.
-    
-      *  Establish start position for sequential processing
-           CALL CBLTDLI USING DLI-GET-UNIQUE, IOPCB, PARM-BUFFER
-   
-           IF TPSTATUS IS NOT EQUAL TO DLI-STATUS-OK THEN
-               DISPLAY 'FAILED WITH STATUS CODE(' TPSTATUS ')'
-               GOBACK
-           END-IF 
-      
-      * Get the next segment for processing
-           CALL CBLTDLI USING DLI-GET-NEXT, IOPCB, PARM-BUFFER
-             IF TPSTATUS IS EQUAL TO SPACES OR DLI-MESSAGE-EXIST
-                                            OR DLI-NO-MORE-MESSAGE
-                                            OR DLI-NO-MORE-SEGMENT              
-             THEN    
-      * A segment was obtained. Validate it.
-               IF PARM-LENGTH LESS THAN 17 THEN
-                 DISPLAY 'PLEASE SPECIFY OPERATION TO CALL AS PARAMETER'
-                 DISPLAY 'VALID OPERATIONS ARE GARB, GRBK and CRBK'
-                 GOBACK
-               END-IF
-           END-IF
-      
-      * We're only expecting one segment so continue processing without
-      * a loop over the DLI-GET-NEXT call
-           IF DEBUG = 'DEBUG' THEN
-            MOVE 1 TO WS-DEBUG
-           END-IF
-      
-           IF WS-DEBUG = 1 THEN
-             DISPLAY OPERATION ' A-MAINLINE Entry.'.
 
-      * Initialise the BAQ Host API and acquire a connection to
+           MOVE LENGTH OF AIB-CONTROL  to AIB-LEN
+           MOVE LENGTH OF INQY-IO-AREA to AIB-OUT-AREA-LEN
+
+      * Obtain the APARM
+           CALL AIBTDLI USING INQY AIB-CONTROL INQY-IO-AREA
+      
+           IF AIB-RETURN-CODE NOT = ZERO
+                DISPLAY 'AIB RETURN CODE = ' AIB-RETURN-CODE
+                DISPLAY 'AIB REASON CODE = ' AIB-REASON-CODE
+                STOP RUN
+           END-IF 
+
+           MOVE INQY-ENVIRON-DATA TO INQY-ENVIRON
+           MOVE INQY-LEN-APARM TO PARM-LENGTH
+           MOVE INQY-APARM TO PARM-DATA
+                     
+           IF PARM-LENGTH LESS THAN 4 THEN
+              DISPLAY 'PLEASE SPECIFY OPEARTION TO CALL AS PARAMETER'
+              DISPLAY 'VALID OPERATIONS ARE GARB, GRBK and CRBK'
+              STOP RUN
+           END-IF.
+
+           IF DEBUG = 'DEBUG' THEN
+              MOVE 1 TO WS-DEBUG.
+
+           IF WS-DEBUG = 1 THEN
+              DISPLAY OPERATION ' A-MAINLINE Entry.'.
+
+      * Initialise the Host API and acquire a connection to
       * a z/OS Connect server instance
            PERFORM B-INIT.
 
@@ -197,7 +174,7 @@
       * Free any resources used by BAQEXEC
               PERFORM X-FREE
 
-      * Terminate the BAQHAPI connection to the z/OS Connect server
+      * Terminate the connection to the z/OS Connect server
               PERFORM X-TERM
            END-IF.
 
@@ -205,7 +182,7 @@
            IF WS-DEBUG = 1 THEN
               DISPLAY OPERATION ' A-MAINLINE Exit. WS-RC=' WS-RC.
 
-           GOBACK.
+           STOP RUN.
 
       *----------------------------------------------------------------*
       * B-INIT
@@ -219,7 +196,7 @@
 
            MOVE OK TO WS-RC.
 
-      * Initialise the Host API and get a conection to the z/OS Connect
+      * Initialise the Host API and get a connection to the z/OS Connect
       * server
            PERFORM X-INIT.
 
@@ -270,7 +247,7 @@
       *
       * Sets the content of the BAQBASE-RBK02Q01 Request structure
       * ready for the BAQEXEC Call. The call is then made to the
-      * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+      * API End Point (EP) via BAQEXEC and the z/OS Connect server.
       *
       * Upon success, the BAQBASE-RBK02P01 structure is returned
       * and dependent of the EP HTTP Status Code a DATA AREA element
@@ -285,9 +262,9 @@
            SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK02Q01.
            MOVE LENGTH OF BAQBASE-RBK02Q01 TO BAQ-REQ-BASE-LENGTH.
 
-      * For this request we want to get all Red Book Inventory
+      * For this request we want to get all Redbook Inventory
       * and not the inventory for a particular author so we set
-      * the Xauthor-existence flag to 0 to tell the BAQHAPI that
+      * the Xauthor-existence flag to 0 to tell z/OS Connect that
       * the optional author parameter is not set.
       *
       * Ever wondered why some generated fields are prefix with 'X'?
@@ -322,12 +299,12 @@
            END-IF.
 
        CA-030.
-      * The BAQHAPI has successfully called remote endpoint API and that
-      * API has returned a HTTP status code that was defined in the
-      * Open API document for the called operation.  This could be an
+      * z/OS Connect has successfully called the remote endpoint API and
+      * the API has returned an HTTP status code that was defined in the
+      * Open API document for the called operation. This could be an
       * error HTTP status code, but as long as it is defined in the OAS
-      * document then BAQHAPI sees this as a successful call so now we
-      * must address the returned base structure and interrogate the
+      * document then z/OS Connect sees this as a successful call so now
+      * we must address the returned base structure and interrogate the
       * returned responses in more detail
       *
       * The address of the returned BAQBASE structure is returned in
@@ -338,7 +315,7 @@
       * 200-OK and 404-NOTFOUND, if the remote endpoint application
       * returns any other HTTP status code then a status of BAQ-WARNING
       * is returned and the endpoint response is returned in
-      * BAQ-RESP-STATUS-MESSAGE, first 1024 characters.
+      * BAQ-RESP-STATUS-MESSAGE, but only the first 1024 characters.
       *
       * If we have reached here we know the remote endpoint status code
       * is either 404-NOTFOUND or 200-OK. Depending on the status code
@@ -350,7 +327,7 @@
       * bases and also for referencing dynamic length arrays.
 
       * Check the remote endpoint HTTP status code and check that a
-      * response was received, lets do the NOTFOUND case first.
+      * response was received, let's check the NOTFOUND case first.
            IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
               IF responseCode404-existence OF BAQBASE-RBK02P01 > 0 THEN
 
@@ -374,32 +351,32 @@
       * BAQGETN has worked and returned the address of the Data Area
       * that contains the RBK02P01-responseCode404 data structure.
       * Lets address that and display the returned message which
-      * should indicate that there are no Red Books in the repository.
+      * should indicate that there are no Redbooks in the repository.
       *
       * The RBK02P01-responseCode404 also contains a dynamic array
-      * Data Area of authors Red Books, but for this operation this
+      * Data Area of authors Redbooks, but for this operation this
       * array is not set
                  SET ADDRESS OF RBK02P01-responseCode404 TO WS-ELEMENT
                  MOVE BAQ-RESP-STATUS-CODE TO WS-STATUS-CODE
                  STRING OPERATION
-                  ' EXEC RESTful EP return HTTP Status Code '
+                  ' API EP returned HTTP Status Code '
                   WS-STATUS-CODE
                   ' MESSAGE ' Xmessage OF RBK02P01-responseCode404
                       (1:Xmessage-length OF RBK02P01-responseCode404)
                   DELIMITED BY SIZE
                   INTO WS-DISPLAY-MSG
 
-                 PERFORM X-WRITE-RESPONSE-MSG
+                 PERFORM X-WRITE-DISPLAY-MSG
               ELSE
       * 404 was returned but there is no RedbookNotFound response body
                  STRING OPERATION
-                   ' EXEC RESTful EP return HTTP Status Code '
+                   ' API EP returned HTTP Status Code '
                    WS-STATUS-CODE
                    ' NO Response Body'
                    DELIMITED BY SIZE
                    INTO WS-DISPLAY-MSG
 
-                 PERFORM X-WRITE-RESPONSE-MSG
+                 PERFORM X-WRITE-DISPLAY-MSG
               END-IF
            END-IF.
 
@@ -412,7 +389,7 @@
            IF BAQ-RESP-STATUS-CODE = 200 THEN
               IF responseCode200-num OF BAQBASE-RBK02P01 > 0 THEN
 
-                 DISPLAY OPERATION ' Red Book Inventory'
+                 DISPLAY OPERATION ' Redbook Inventory'
 
                  PERFORM CAA-GET-EACH-REDBOOK VARYING WS-INDEX
                     FROM 1 BY 1
@@ -421,7 +398,7 @@
                        WS-RC = FAILED
               ELSE
                  DISPLAY OPERATION
-                   ' EXEC RESTful EP - No Red Books returned'
+                   ' EXEC API EP - No Redbooks returned'
               END-IF
            END-IF.
 
@@ -436,7 +413,7 @@
       * CAA-GET-EACH-REDBOOK
       *
       * Gets each book returned by the remote End Point Service by using
-      * BAQGETN (Get Next) and displays the Red Book details.
+      * BAQGETN (Get Next) and displays the Redbook details.
       *----------------------------------------------------------------*
        CAA-GET-EACH-REDBOOK SECTION.
        CAA-010.
@@ -453,18 +430,18 @@
 
            IF WS-RC = FAILED THEN GO TO CAA-999.
 
-      * We have fetched the Red Book from the Data Area so set the
+      * We have fetched the Redbook from the Data Area so set the
       * address of the 01 level data structure.
            SET ADDRESS OF RBK02P01-responseCode200 to WS-ELEMENT.
 
-      * For simplicity lets display the content of the Red Book data
+      * For simplicity lets display the content of the Redbook data
       * structure
       *
       * Note that optional fields have an '-existence' field to denote
       * if the field exists or not.
 
            IF WS-DEBUG = 1 THEN
-               DISPLAY OPERATION ' Red Book number ' WS-INDEX.
+               DISPLAY OPERATION ' Redbook number ' WS-INDEX.
 
            STRING OPERATION ' Title '
              Xtitle OF RBK02P01-responseCode200
@@ -476,12 +453,12 @@
            DISPLAY WS-DISPLAY-MSG.
            MOVE SPACES TO WS-DISPLAY-MSG.
 
-      * Red Books typically have more than one author so these are
+      * Redbooks typically have more than one author so these are
       * contained in an array in the OAS Redbook schema and thus
-      * returned in a dynamic Data Area.  If the OAS Schema defined a
+      * returned in a dynamic Data Area. If the OAS Schema defined a
       * 'maxItems' and this is less than the property
-      * 'inlineMaxOccursLimit' set in the Gradle Plugin options.yaml
-      * then the array would be inlined in the Red Book data structure.
+      * 'inlineMaxOccursLimit', set in the Gradle Plugin options.yaml,
+      * then the array would be inlined in the Redbook data structure.
       * But here we use a dynamic length array again.
            PERFORM CAAA-GET-EACH-AUTHOR VARYING WS-INDEX-2
               FROM 1 BY 1
@@ -558,7 +535,7 @@
       *
       * Sets the content of the BAQBASE-RBK00Q01 Request structure
       * ready for the BAQEXEC Call. The call is then made to the
-      * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+      * API End Point (EP) via BAQEXEC and the z/OS Connect server.
       *
       * Upon success, the BAQBASE-RBK00P01 structure is returned
       * and dependent of the EP HTTP Status Code a DATA AREA element
@@ -570,7 +547,7 @@
               DISPLAY OPERATION ' CB-GET-REDBOOK Entry.'.
 
 
-      * Now its your turn!  We have seen from operation getAllRedbooks
+      * Now its your turn! We have seen from operation getAllRedbooks
       * how to send a request to a remote end point API using
       * z/OS Connect to handle the JSON to COBOL language structure
       * transformation and to process the response using Data Areas
@@ -584,14 +561,14 @@
       * data structure BAQBASE-RBK00Q01 and possibly an author.
       *
       * If an author is supplied and title cannot be located in the
-      * Red Book inventory then the API will return an array of Redbooks
+      * Redbook inventory then the API will return an array of Redbooks
       * that the supplied author has written.  Please refer to Java
       * endpoint API program class RedbooksResource.java to see the
       * test data used in this simple Redbook Api application.
       *
       * If you want to test out the title not found function with a
       * supplied author then please use the author name 'Lydia Parziale'
-      * who has two Red Books in the inventory, and some title that does
+      * who has two Redbooks in the inventory, and some title that does
       * not exist.
       *
       * The getRedbook opertion defines three HTTP Responses
@@ -603,7 +580,7 @@
       * for this operation RBK00P01 structures will contain the response
       * as generated by the Gradle Plugin.
       *
-      * Note that getRedbook returns a single Red Book not an array
+      * Note that getRedbook returns a single Redbook not an array
       * so tha will be simpler to implement.
       *
       * For the 500 - Internal Server Error response this has been
@@ -660,15 +637,15 @@
       *
       *      If authorsBooks-num is > 0 then a dynamic length Data Area
       *      exists of the authors Redbooks use it's Data Area to fetch
-      *      each Red Book
+      *      each Redbook
            IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
                DISPLAY OPERATION ' TODO'
            END-IF.
 
        CB-050.
-      * TODO Process the returned Red Book, check the
+      * TODO Process the returned Redbook, check the
       *      responseCode200-existence is 1 and if so use
-      *      responseCode200-dataarea to get the returned Red Book
+      *      responseCode200-dataarea to get the returned Redbook
       *      in to data structure RBK00P01-responseCode200 and
       *      display the content
            IF BAQ-RESP-STATUS-CODE = 200 THEN
@@ -678,7 +655,7 @@
        CB-060.
       * TODO We have processed the 3 possible HTTP Status Codes defined
       *      in the OAS redbookapi.yaml document, but what happens if
-      *      the remote endpoint API returned an undefined HTTP status
+      *      the remote endpoint API EP returned an undefined HTTP status
       *      code, a 409-CONFLICT for example?  In this case
       *      BAQEXEC will return a Completion Code of BAQ-WARNING
       *      with BAQ-ZCON-REASON-CODE set to 2011 if the response is
@@ -700,7 +677,7 @@
       *
       * Sets the content of the BAQBASE-RBK01Q01 Request structure
       * ready for the BAQEXEC Call. The call is then made to the
-      * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+      * API End Point (EP) via BAQEXEC and the z/OS Connect server.
       *
       * Upon success, the BAQBASE-RBK01P01 structure is returned
       * and dependent of the EP HTTP Status Code a DATA AREA element
@@ -712,13 +689,13 @@
               DISPLAY OPERATION ' CC-CREATE-REDBOOK Entry.'.
 
       * Even less help on this one!  Implement the COBOL code to call
-      * operation createRedbook to create a new Red Book.
+      * operation createRedbook to create a new Redbook.
       * The redbookapi.yaml file describes the createRedbook operation
       * noting the required parameter, the request body and the
       * responses.  The BAQBASE-RBK01Q01 language structure defines
       * the COBOL language structure that has fields for the parameter
       * and the request body. These need to be completed.
-      * make the BAQEXEC call and process the response whcich will be
+      * make the BAQEXEC call and process the response which will be
       * either 409-CONFLICT, i.e. the Redbook already exists, or 2XX.
       * Here 2XX is used as a wild card to cover any 2nn HTTP status
       * code returned from the remote endpiont API.  For a create type
@@ -727,7 +704,7 @@
       * 200-OK, so the OAS document covers this case by using 2XX.
       * the response will be accessed via BAQBASE-RBK01P01.
 
-      * TODO Create a new Red Book.
+      * TODO Create a new Redbook.
 
        CC-999.
            IF WS-DEBUG = 1 THEN
@@ -740,7 +717,7 @@
       *
       * Initialize z/OS Connect call by calling BAQINIT this will
       * acquire a connection to a z/OS Connect server and initialise
-      * the BAQ Host API ready for communication.
+      * the Host API ready for communication.
       *----------------------------------------------------------------*
        X-INIT SECTION.
        X-010.
@@ -778,7 +755,7 @@
                  DELIMITED BY SIZE
                  INTO WS-DISPLAY-MSG
 
-              PERFORM X-WRITE-RESPONSE-MSG
+              PERFORM X-WRITE-DISPLAY-MSG
 
               DISPLAY BAQ-ZCON-RETURN-MESSAGE
                         (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
@@ -839,7 +816,7 @@
                  DELIMITED BY SIZE
                  INTO WS-DISPLAY-MSG
 
-              PERFORM X-WRITE-RESPONSE-MSG
+              PERFORM X-WRITE-DISPLAY-MSG
 
               IF WS-DEBUG = 1 THEN
                   DISPLAY OPERATION ' ' BAQ-ZCON-RETURN-MESSAGE
@@ -860,8 +837,11 @@
       *----------------------------------------------------------------*
       * X-GET-DATA-AREA-ELEMENT
       *
-      * Gets each book returned by the End Point Service by using
-      * BAQGETN (Get Next) and displays the book details.
+      * Gets a Data Element from the Data Area named in the variable 
+      * WS-DATA-AREA-NAME using length WS-ELEMENT-LENGTH.
+      * 
+      * Calls BAQGETN (Get Next) which sets WS-ELEMENT to the address
+      * of the data element retrieved.
       *----------------------------------------------------------------*
        X-GET-DATA-AREA-ELEMENT SECTION.
        X-010.
@@ -901,7 +881,7 @@
                  DELIMITED BY SIZE
                  INTO WS-DISPLAY-MSG
 
-              PERFORM X-WRITE-RESPONSE-MSG
+              PERFORM X-WRITE-DISPLAY-MSG
 
               DISPLAY BAQ-ZCON-RETURN-MESSAGE
                         (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
@@ -953,7 +933,7 @@
                  DELIMITED BY SIZE
                  INTO WS-DISPLAY-MSG
 
-              PERFORM X-WRITE-RESPONSE-MSG
+              PERFORM X-WRITE-DISPLAY-MSG
 
               DISPLAY BAQ-ZCON-RETURN-MESSAGE
                         (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
@@ -1005,7 +985,7 @@
                  DELIMITED BY SIZE
                  INTO WS-DISPLAY-MSG
 
-              PERFORM X-WRITE-RESPONSE-MSG
+              PERFORM X-WRITE-DISPLAY-MSG
 
               DISPLAY BAQ-ZCON-RETURN-MESSAGE
                         (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
@@ -1021,11 +1001,10 @@
       *----------------------------------------------------------------*
       * Write messages to standard out
       *----------------------------------------------------------------*
-       X-WRITE-RESPONSE-MSG SECTION.
+       X-WRITE-DISPLAY-MSG SECTION.
        X-010.
            DISPLAY WS-DISPLAY-MSG.
 
            MOVE SPACES TO WS-DISPLAY-MSG.
 
-           EXIT. 
-           
+           EXIT.

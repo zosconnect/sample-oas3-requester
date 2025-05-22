@@ -6,9 +6,9 @@
            03 BAQ-API-INFO-EYE            PIC X(4)
               VALUE 'BAQA'.
            03 BAQ-API-INFO-LENGTH         PIC 9(9) COMP-5 SYNC
-              VALUE 1052.
+              VALUE 1311.
            03 BAQ-API-INFO-VERSION        PIC 9(9) COMP-5 SYNC
-              VALUE 1.
+              VALUE 2.
            03 BAQ-API-INFO-RESERVED01     PIC 9(9) COMP-5 SYNC
               VALUE 0.
            03 BAQ-API-NAME                PIC X(255)
@@ -27,3 +27,7 @@
               VALUE 'createRedbook'.
            03 BAQ-API-OPERATION-LEN       PIC 9(9) COMP-5 SYNC
               VALUE 13.
+           03 BAQ-API-MEDIA-TYPE          PIC X(255)
+              VALUE 'application/json'.
+           03 BAQ-API-MEDIA-TYPE-LEN      PIC 9(9) COMP-5 SYNC
+              VALUE 16.

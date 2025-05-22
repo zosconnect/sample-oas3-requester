@@ -1,4 +1,5 @@
 language: PLI
 requesterPrefix: RBK
+requesterExtension: inc
 defaultCharacterMaxLength: 50
 defaultFractionDigits: 2

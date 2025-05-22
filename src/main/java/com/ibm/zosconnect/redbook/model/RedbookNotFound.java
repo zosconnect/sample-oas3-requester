@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A model class to represent an error where a requested IBM Red Book cannot be found
+ * A model class to represent an error where a requested IBM Redbook cannot be found
  */
 public class RedbookNotFound {
 

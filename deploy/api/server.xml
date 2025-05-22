@@ -5,7 +5,7 @@
      IBM Redbook API installed. The same server also executes the API
      endpoint application for simplicity. -->
 
-    <!-- Enable API requester feature for OAS defined RESTful endpoints -->
+    <!-- Enable API requester feature for OAS defined API endpoints -->
     <featureManager>
         <feature>zosconnect:oasRequester-1.0</feature>
     </featureManager>
