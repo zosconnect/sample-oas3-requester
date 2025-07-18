@@ -7,7 +7,7 @@ This Redbook API requester sample implements a very simple IBM Redbook informati
 This project's gradle build will build the remote endpoint RedbookAPI application war file and also generate the z/OS Connect API requester war files for COBOL and PLI.
 
 ## Instructions
-Follow the instructions in the [IBM Documentation](https://www.ibm.com/docs/en/zos-connect/zos-connect/3.0?topic=gst-creating-cics-cobol-zos-connect-api-requester-application) for details on how to build, deploy and run this tutorial sample.
+Follow the instructions in the [IBM Documentation](https://www.ibm.com/docs/en/zos-connect/3.0.0?topic=gstz3-creating-zos-connect-api-requester-project-zos-application) for details on how to build, deploy and run this tutorial sample.
 
 ## Structure
 * The `COBOL/finish` directory contains the CICS COBOL program BAQHRBKC.cbl, IMS COBOL programs BAQHRBKB.cbl and BAQHRBKT.cbl and the standalone COBOL application BAQHRBKZ.cbl. These programs have all three operations implemented.
