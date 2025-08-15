@@ -1,41 +1,41 @@
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       * This file contains the generated language structure(s) for
-      *  response JSON schema 'createRedbook_response.json'.
+      *  response JSON schema 'mergeRedbook_response.json'.
       * This structure was generated using 'DFHJS2LS' at mapping level
       *  '5.0'.
       * 
       *  
-      *   01 BAQBASE-RBK01P01.
+      *   01 BAQBASE-RBK03P01.
       * 
       *  
-      * Data area 'responseCode2XX-dataarea' contains 0 or 1 instances
-      *  of structure 'RBK01P01-responseCode2XX', each of which
+      * Data area 'responseCode200-dataarea' contains 0 or 1 instances
+      *  of structure 'RBK03P01-responseCode200', each of which
       *  represents an instance of JSON schema keyword
-      *  'responseCode2XX'. The Data area must be read from and
+      *  'responseCode200'. The Data area must be read from and
       *  written to in BIT mode.
-      *     03 responseCode2XX-existence     PIC S9(9) COMP-5 SYNC.
-      *     03 responseCode2XX-dataarea      PIC X(16).
+      *     03 responseCode200-existence     PIC S9(9) COMP-5 SYNC.
+      *     03 responseCode200-dataarea      PIC X(16).
       * 
       *  
       *  
-      * Data area 'responseCode409-dataarea' contains 0 or 1 instances
-      *  of structure 'RBK01P01-responseCode409', each of which
+      * Data area 'responseCode404-dataarea' contains 0 or 1 instances
+      *  of structure 'RBK03P01-responseCode404', each of which
       *  represents an instance of JSON schema keyword
-      *  'responseCode409'. The Data area must be read from and
+      *  'responseCode404'. The Data area must be read from and
       *  written to in BIT mode.
-      *     03 responseCode409-existence     PIC S9(9) COMP-5 SYNC.
-      *     03 responseCode409-dataarea      PIC X(16).
+      *     03 responseCode404-existence     PIC S9(9) COMP-5 SYNC.
+      *     03 responseCode404-dataarea      PIC X(16).
       * 
       *  
       *  
       * This structure describes one instance of the data in Data Area
-      *  'responseCode2XX-dataarea'.
-      *  01 RBK01P01-responseCode2XX.
-      *    03 responseCode2XX.
+      *  'responseCode200-dataarea'.
+      *  01 RBK03P01-responseCode200.
+      *    03 responseCode200.
       * 
       * Comments for field 'Xtitle':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->title'.
+      *  'responseCode200->title'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '80'.
@@ -46,8 +46,8 @@
       * 
       *  
       * Data area 'authors-dataarea' contains 'authors-num' instances
-      *  of structure 'RBK01P01-authors', each of which represents an
-      *  instance of JSON schema keyword 'responseCode2XX->authors'.
+      *  of structure 'RBK03P01-authors', each of which represents an
+      *  instance of JSON schema keyword 'responseCode200->authors'.
       *  The Data area must be read from and written to in BIT mode.
       * There should be at least '0' instance(s).
       * There should be at most '20' instance(s).
@@ -57,7 +57,7 @@
       *  
       * Comments for field 'Xstatus':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->status'.
+      *  'responseCode200->status'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'enumeration' value: '(DRAFT, PUBLISHED)'.
       * This field contains a varying length array of characters or
@@ -67,14 +67,14 @@
       * 
       * Comments for field 'formNumber':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->formNumber'.
+      *  'responseCode200->formNumber'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '12'.
       * JSON schema keyword 'maxLength' value: '12'.
       *      06 formNumber                    PIC X(12).
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->publicationDate' is
+      * JSON schema keyword 'responseCode200->publicationDate' is
       *  optional. The existence of the field is indicated by field
       *  'publicationDate-existence'.
       *      06 publicationDate-existence     PIC S9(9) COMP-5 SYNC.
@@ -84,7 +84,7 @@
       * 
       * Comments for field 'publicationDate2':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->publicationDate'.
+      *  'responseCode200->publicationDate'.
       * JSON schema type: 'date'.
       * This field contains a varying length array of characters or
       *  binary data.
@@ -92,7 +92,7 @@
       *        09 publicationDate2              PIC X(32).
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->documentType' is
+      * JSON schema keyword 'responseCode200->documentType' is
       *  optional. The existence of the field is indicated by field
       *  'documentType-existence'.
       *      06 documentType-existence        PIC S9(9) COMP-5 SYNC.
@@ -102,7 +102,7 @@
       * 
       * Comments for field 'documentType2':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->documentType'.
+      *  'responseCode200->documentType'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'enumeration' value: '(PDF, HARDCOPY)'.
       * This field contains a varying length array of characters or
@@ -111,7 +111,7 @@
       *        09 documentType2                 PIC X(8).
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->sizeMB' is optional. The
+      * JSON schema keyword 'responseCode200->sizeMB' is optional. The
       *  existence of the field is indicated by field
       *  'sizeMB-existence'.
       *      06 sizeMB-existence              PIC S9(9) COMP-5 SYNC.
@@ -119,14 +119,14 @@
       *  
       * Comments for field 'sizeMB':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->sizeMB'.
+      *  'responseCode200->sizeMB'.
       * JSON schema type: 'number'.
       * JSON schema keyword 'format' value: 'decimal'.
       * JSON schema keyword 'minimum' value: '0'.
       *      06 sizeMB                        PIC 9(16)V9(2) COMP-3.
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->url' is optional. The
+      * JSON schema keyword 'responseCode200->url' is optional. The
       *  existence of the field is indicated by field 'url-existence'.
       *      06 url-existence                 PIC S9(9) COMP-5 SYNC.
       * 
@@ -135,7 +135,7 @@
       * 
       * Comments for field 'url2':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->url'.
+      *  'responseCode200->url'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '100'.
@@ -145,7 +145,7 @@
       *        09 url2                          PIC X(100).
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->owningDepartment' is
+      * JSON schema keyword 'responseCode200->owningDepartment' is
       *  optional. The existence of the field is indicated by field
       *  'owningDepartment-existence'.
       *      06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
@@ -155,7 +155,7 @@
       * 
       * Comments for field 'Xid':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->owningDepartment->id'.
+      *  'responseCode200->owningDepartment->id'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '5'.
       * JSON schema keyword 'maxLength' value: '5'.
@@ -163,7 +163,7 @@
       * 
       * Comments for field 'name':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->owningDepartment->name'.
+      *  'responseCode200->owningDepartment->name'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -174,7 +174,7 @@
       * 
       * Comments for field 'contact':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->owningDepartment->contact'.
+      *  'responseCode200->owningDepartment->contact'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -192,11 +192,11 @@
       *  
       * This structure describes one instance of the data in Data Area
       *  'authors-dataarea'.
-      *  01 RBK01P01-authors.
+      *  01 RBK03P01-authors.
       *    03 authors.
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->authors->firstName' is
+      * JSON schema keyword 'responseCode200->authors->firstName' is
       *  optional. The existence of the field is indicated by field
       *  'firstName-existence'.
       *      06 firstName-existence           PIC S9(9) COMP-5 SYNC.
@@ -206,7 +206,7 @@
       * 
       * Comments for field 'firstName2':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->authors->firstName'.
+      *  'responseCode200->authors->firstName'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -216,7 +216,7 @@
       *        09 firstName2                    PIC X(40).
       * 
       *  
-      * JSON schema keyword 'responseCode2XX->authors->lastName' is
+      * JSON schema keyword 'responseCode200->authors->lastName' is
       *  optional. The existence of the field is indicated by field
       *  'lastName-existence'.
       *      06 lastName-existence            PIC S9(9) COMP-5 SYNC.
@@ -226,7 +226,7 @@
       * 
       * Comments for field 'lastName2':
       * This field represents the value of JSON schema keyword
-      *  'responseCode2XX->authors->lastName'.
+      *  'responseCode200->authors->lastName'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -243,13 +243,40 @@
       * 
       *  
       * This structure describes one instance of the data in Data Area
-      *  'responseCode409-dataarea'.
-      *  01 RBK01P01-responseCode409.
-      *    03 responseCode409.
+      *  'responseCode404-dataarea'.
+      *  01 RBK03P01-responseCode404.
+      *    03 responseCode404.
+      * 
+      * Comments for field 'Xmessage':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode404->message'.
+      * JSON schema type: 'string'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *      06 Xmessage-length               PIC S9999 COMP-5 SYNC.
+      *      06 Xmessage                      PIC X(50).
+      * 
+      *  
+      * Data area 'authorsBooks-dataarea' contains 'authorsBooks-num'
+      *  instances of structure 'RBK03P01-authorsBooks', each of which
+      *  represents an instance of JSON schema keyword
+      *  'responseCode404->authorsBooks'. The Data area must be read
+      *  from and written to in BIT mode.
+      * There should be at least '0' instance(s).
+      * There is no maximum number of instances.
+      *      06 authorsBooks-num              PIC S9(9) COMP-5 SYNC.
+      *      06 authorsBooks-dataarea         PIC X(16).
+      * 
+      *  
+      *  
+      * This structure describes one instance of the data in Data Area
+      *  'authorsBooks-dataarea'.
+      *  01 RBK03P01-authorsBooks.
+      *    03 authorsBooks.
       * 
       * Comments for field 'Xtitle':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->title'.
+      *  'responseCode404->authorsBooks->title'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '80'.
@@ -260,10 +287,10 @@
       * 
       *  
       * Data area 'authors3-dataarea' contains 'authors3-num'
-      *  instances of structure 'RBK01P01-authors3', each of which
+      *  instances of structure 'RBK03P01-authors3', each of which
       *  represents an instance of JSON schema keyword
-      *  'responseCode409->authors'. The Data area must be read from
-      *  and written to in BIT mode.
+      *  'responseCode404->authorsBooks->authors'. The Data area must
+      *  be read from and written to in BIT mode.
       * There should be at least '0' instance(s).
       * There should be at most '20' instance(s).
       *      06 authors3-num                  PIC S9(9) COMP-5 SYNC.
@@ -272,7 +299,7 @@
       *  
       * Comments for field 'Xstatus':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->status'.
+      *  'responseCode404->authorsBooks->status'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'enumeration' value: '(DRAFT, PUBLISHED)'.
       * This field contains a varying length array of characters or
@@ -282,15 +309,16 @@
       * 
       * Comments for field 'formNumber':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->formNumber'.
+      *  'responseCode404->authorsBooks->formNumber'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '12'.
       * JSON schema keyword 'maxLength' value: '12'.
       *      06 formNumber                    PIC X(12).
       * 
       *  
-      * JSON schema keyword 'responseCode409->publicationDate' is
-      *  optional. The existence of the field is indicated by field
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->publicationDate' is optional.
+      *  The existence of the field is indicated by field
       *  'publicationDate2-existence'.
       *      06 publicationDate2-existence    PIC S9(9) COMP-5 SYNC.
       * 
@@ -299,7 +327,7 @@
       * 
       * Comments for field 'publicationDate':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->publicationDate'.
+      *  'responseCode404->authorsBooks->publicationDate'.
       * JSON schema type: 'date'.
       * This field contains a varying length array of characters or
       *  binary data.
@@ -307,8 +335,9 @@
       *        09 publicationDate               PIC X(32).
       * 
       *  
-      * JSON schema keyword 'responseCode409->documentType' is
-      *  optional. The existence of the field is indicated by field
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->documentType' is optional.
+      *  The existence of the field is indicated by field
       *  'documentType2-existence'.
       *      06 documentType2-existence       PIC S9(9) COMP-5 SYNC.
       * 
@@ -317,7 +346,7 @@
       * 
       * Comments for field 'documentType':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->documentType'.
+      *  'responseCode404->authorsBooks->documentType'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'enumeration' value: '(PDF, HARDCOPY)'.
       * This field contains a varying length array of characters or
@@ -326,23 +355,24 @@
       *        09 documentType                  PIC X(8).
       * 
       *  
-      * JSON schema keyword 'responseCode409->sizeMB' is optional. The
-      *  existence of the field is indicated by field
+      * JSON schema keyword 'responseCode404->authorsBooks->sizeMB' is
+      *  optional. The existence of the field is indicated by field
       *  'sizeMB2-existence'.
       *      06 sizeMB2-existence             PIC S9(9) COMP-5 SYNC.
       * 
       *  
       * Comments for field 'sizeMB':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->sizeMB'.
+      *  'responseCode404->authorsBooks->sizeMB'.
       * JSON schema type: 'number'.
       * JSON schema keyword 'format' value: 'decimal'.
       * JSON schema keyword 'minimum' value: '0'.
       *      06 sizeMB                        PIC 9(16)V9(2) COMP-3.
       * 
       *  
-      * JSON schema keyword 'responseCode409->url' is optional. The
-      *  existence of the field is indicated by field 'url2-existence'.
+      * JSON schema keyword 'responseCode404->authorsBooks->url' is
+      *  optional. The existence of the field is indicated by field
+      *  'url2-existence'.
       *      06 url2-existence                PIC S9(9) COMP-5 SYNC.
       * 
       *  
@@ -350,7 +380,7 @@
       * 
       * Comments for field 'url':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->url'.
+      *  'responseCode404->authorsBooks->url'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '100'.
@@ -360,7 +390,8 @@
       *        09 url                           PIC X(100).
       * 
       *  
-      * JSON schema keyword 'responseCode409->owningDepartment' is
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->owningDepartment' is
       *  optional. The existence of the field is indicated by field
       *  'owningDepartment-existence'.
       *      06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
@@ -370,7 +401,7 @@
       * 
       * Comments for field 'Xid':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->owningDepartment->id'.
+      *  'responseCode404->authorsBooks->owningDepartment->id'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '5'.
       * JSON schema keyword 'maxLength' value: '5'.
@@ -378,7 +409,7 @@
       * 
       * Comments for field 'name':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->owningDepartment->name'.
+      *  'responseCode404->authorsBooks->owningDepartment->name'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -389,7 +420,7 @@
       * 
       * Comments for field 'contact':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->owningDepartment->contact'.
+      *  'responseCode404->authorsBooks->owningDepartment->contact'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -407,11 +438,12 @@
       *  
       * This structure describes one instance of the data in Data Area
       *  'authors3-dataarea'.
-      *  01 RBK01P01-authors3.
+      *  01 RBK03P01-authors3.
       *    03 authors3.
       * 
       *  
-      * JSON schema keyword 'responseCode409->authors->firstName' is
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->authors->firstName' is
       *  optional. The existence of the field is indicated by field
       *  'firstName2-existence'.
       *      06 firstName2-existence          PIC S9(9) COMP-5 SYNC.
@@ -421,7 +453,7 @@
       * 
       * Comments for field 'firstName':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->authors->firstName'.
+      *  'responseCode404->authorsBooks->authors->firstName'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -431,7 +463,8 @@
       *        09 firstName                     PIC X(40).
       * 
       *  
-      * JSON schema keyword 'responseCode409->authors->lastName' is
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->authors->lastName' is
       *  optional. The existence of the field is indicated by field
       *  'lastName2-existence'.
       *      06 lastName2-existence           PIC S9(9) COMP-5 SYNC.
@@ -441,7 +474,7 @@
       * 
       * Comments for field 'lastName':
       * This field represents the value of JSON schema keyword
-      *  'responseCode409->authors->lastName'.
+      *  'responseCode404->authorsBooks->authors->lastName'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
@@ -459,18 +492,18 @@
       *  
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  
-          01 BAQBASE-RBK01P01.
+          01 BAQBASE-RBK03P01.
  
-            03 responseCode2XX-existence     PIC S9(9) COMP-5 SYNC.
-            03 responseCode2XX-dataarea      PIC X(16).
- 
- 
-            03 responseCode409-existence     PIC S9(9) COMP-5 SYNC.
-            03 responseCode409-dataarea      PIC X(16).
+            03 responseCode200-existence     PIC S9(9) COMP-5 SYNC.
+            03 responseCode200-dataarea      PIC X(16).
  
  
-         01 RBK01P01-responseCode2XX.
-           03 responseCode2XX.
+            03 responseCode404-existence     PIC S9(9) COMP-5 SYNC.
+            03 responseCode404-dataarea      PIC X(16).
+ 
+ 
+         01 RBK03P01-responseCode200.
+           03 responseCode200.
              06 Xtitle-length                 PIC S9999 COMP-5 SYNC.
              06 Xtitle                        PIC X(80).
  
@@ -513,7 +546,7 @@
                09 contact                       PIC X(40).
              06 filler                        PIC X(2).
  
-         01 RBK01P01-authors.
+         01 RBK03P01-authors.
            03 authors.
  
              06 firstName-existence           PIC S9(9) COMP-5 SYNC.
@@ -529,8 +562,17 @@
                09 lastName2                     PIC X(40).
              06 filler                        PIC X(2).
  
-         01 RBK01P01-responseCode409.
-           03 responseCode409.
+         01 RBK03P01-responseCode404.
+           03 responseCode404.
+             06 Xmessage-length               PIC S9999 COMP-5 SYNC.
+             06 Xmessage                      PIC X(50).
+ 
+             06 authorsBooks-num              PIC S9(9) COMP-5 SYNC.
+             06 authorsBooks-dataarea         PIC X(16).
+ 
+ 
+         01 RBK03P01-authorsBooks.
+           03 authorsBooks.
              06 Xtitle-length                 PIC S9999 COMP-5 SYNC.
              06 Xtitle                        PIC X(80).
  
@@ -573,7 +615,7 @@
                09 contact                       PIC X(40).
              06 filler                        PIC X(2).
  
-         01 RBK01P01-authors3.
+         01 RBK03P01-authors3.
            03 authors3.
  
              06 firstName2-existence          PIC S9(9) COMP-5 SYNC.

@@ -1,6 +1,6 @@
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       * This file contains the generated language structure(s) for
-      *  response JSON schema 'getAllRedbooks_response.json'.
+      *  response JSON schema 'patchRedbook_response.json'.
       * This structure was generated using 'DFHJS2LS' at mapping level
       *  '5.0'.
       * 
@@ -8,14 +8,12 @@
       *   01 BAQBASE-RBK02P01.
       * 
       *  
-      * Data area 'responseCode200-dataarea' contains
-      *  'responseCode200-num' instances of structure
-      *  'RBK02P01-responseCode200', each of which represents an
-      *  instance of JSON schema keyword 'responseCode200'. The Data
-      *  area must be read from and written to in BIT mode.
-      * There should be at least '0' instance(s).
-      * There is no maximum number of instances.
-      *     03 responseCode200-num           PIC S9(9) COMP-5 SYNC.
+      * Data area 'responseCode200-dataarea' contains 0 or 1 instances
+      *  of structure 'RBK02P01-responseCode200', each of which
+      *  represents an instance of JSON schema keyword
+      *  'responseCode200'. The Data area must be read from and
+      *  written to in BIT mode.
+      *     03 responseCode200-existence     PIC S9(9) COMP-5 SYNC.
       *     03 responseCode200-dataarea      PIC X(16).
       * 
       *  
@@ -146,6 +144,45 @@
       *        09 url2-length                   PIC S9999 COMP-5 SYNC.
       *        09 url2                          PIC X(100).
       * 
+      *  
+      * JSON schema keyword 'responseCode200->owningDepartment' is
+      *  optional. The existence of the field is indicated by field
+      *  'owningDepartment-existence'.
+      *      06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 owningDepartment.
+      * 
+      * Comments for field 'Xid':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode200->owningDepartment->id'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '5'.
+      * JSON schema keyword 'maxLength' value: '5'.
+      *        09 Xid                           PIC X(5).
+      * 
+      * Comments for field 'name':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode200->owningDepartment->name'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 name-length                   PIC S9999 COMP-5 SYNC.
+      *        09 name                          PIC X(40).
+      * 
+      * Comments for field 'contact':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode200->owningDepartment->contact'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 contact-length                PIC S9999 COMP-5 SYNC.
+      *        09 contact                       PIC X(40).
+      * 
       * Comments for field 'filler':
       * This is a filler entry to ensure the correct padding for a
       *  structure. These slack bytes do not contain any application
@@ -156,17 +193,53 @@
       * This structure describes one instance of the data in Data Area
       *  'authors-dataarea'.
       *  01 RBK02P01-authors.
+      *    03 authors.
       * 
-      * Comments for field 'authors':
+      *  
+      * JSON schema keyword 'responseCode200->authors->firstName' is
+      *  optional. The existence of the field is indicated by field
+      *  'firstName-existence'.
+      *      06 firstName-existence           PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 firstName.
+      * 
+      * Comments for field 'firstName2':
       * This field represents the value of JSON schema keyword
-      *  'responseCode200->authors'.
+      *  'responseCode200->authors->firstName'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
       * This field contains a varying length array of characters or
       *  binary data.
-      *    03 authors-length                PIC S9999 COMP-5 SYNC.
-      *    03 authors                       PIC X(40).
+      *        09 firstName2-length             PIC S9999 COMP-5 SYNC.
+      *        09 firstName2                    PIC X(40).
+      * 
+      *  
+      * JSON schema keyword 'responseCode200->authors->lastName' is
+      *  optional. The existence of the field is indicated by field
+      *  'lastName-existence'.
+      *      06 lastName-existence            PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 lastName.
+      * 
+      * Comments for field 'lastName2':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode200->authors->lastName'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 lastName2-length              PIC S9999 COMP-5 SYNC.
+      *        09 lastName2                     PIC X(40).
+      * 
+      * Comments for field 'filler':
+      * This is a filler entry to ensure the correct padding for a
+      *  structure. These slack bytes do not contain any application
+      *  data.
+      *      06 filler                        PIC X(2).
       * 
       *  
       * This structure describes one instance of the data in Data Area
@@ -213,15 +286,15 @@
       *      06 Xtitle                        PIC X(80).
       * 
       *  
-      * Data area 'authors2-dataarea' contains 'authors2-num'
-      *  instances of structure 'RBK02P01-authors2', each of which
+      * Data area 'authors3-dataarea' contains 'authors3-num'
+      *  instances of structure 'RBK02P01-authors3', each of which
       *  represents an instance of JSON schema keyword
       *  'responseCode404->authorsBooks->authors'. The Data area must
       *  be read from and written to in BIT mode.
       * There should be at least '0' instance(s).
       * There should be at most '20' instance(s).
-      *      06 authors2-num                  PIC S9(9) COMP-5 SYNC.
-      *      06 authors2-dataarea             PIC X(16).
+      *      06 authors3-num                  PIC S9(9) COMP-5 SYNC.
+      *      06 authors3-dataarea             PIC X(16).
       * 
       *  
       * Comments for field 'Xstatus':
@@ -316,6 +389,46 @@
       *        09 url-length                    PIC S9999 COMP-5 SYNC.
       *        09 url                           PIC X(100).
       * 
+      *  
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->owningDepartment' is
+      *  optional. The existence of the field is indicated by field
+      *  'owningDepartment-existence'.
+      *      06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 owningDepartment3.
+      * 
+      * Comments for field 'Xid':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode404->authorsBooks->owningDepartment->id'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '5'.
+      * JSON schema keyword 'maxLength' value: '5'.
+      *        09 Xid                           PIC X(5).
+      * 
+      * Comments for field 'name':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode404->authorsBooks->owningDepartment->name'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 name-length                   PIC S9999 COMP-5 SYNC.
+      *        09 name                          PIC X(40).
+      * 
+      * Comments for field 'contact':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode404->authorsBooks->owningDepartment->contact'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 contact-length                PIC S9999 COMP-5 SYNC.
+      *        09 contact                       PIC X(40).
+      * 
       * Comments for field 'filler':
       * This is a filler entry to ensure the correct padding for a
       *  structure. These slack bytes do not contain any application
@@ -324,26 +437,64 @@
       * 
       *  
       * This structure describes one instance of the data in Data Area
-      *  'authors2-dataarea'.
-      *  01 RBK02P01-authors2.
+      *  'authors3-dataarea'.
+      *  01 RBK02P01-authors3.
+      *    03 authors3.
       * 
-      * Comments for field 'authors':
+      *  
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->authors->firstName' is
+      *  optional. The existence of the field is indicated by field
+      *  'firstName2-existence'.
+      *      06 firstName2-existence          PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 firstName2.
+      * 
+      * Comments for field 'firstName':
       * This field represents the value of JSON schema keyword
-      *  'responseCode404->authorsBooks->authors'.
+      *  'responseCode404->authorsBooks->authors->firstName'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
       * This field contains a varying length array of characters or
       *  binary data.
-      *    03 authors-length                PIC S9999 COMP-5 SYNC.
-      *    03 authors                       PIC X(40).
+      *        09 firstName-length              PIC S9999 COMP-5 SYNC.
+      *        09 firstName                     PIC X(40).
+      * 
+      *  
+      * JSON schema keyword
+      *  'responseCode404->authorsBooks->authors->lastName' is
+      *  optional. The existence of the field is indicated by field
+      *  'lastName2-existence'.
+      *      06 lastName2-existence           PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 lastName2.
+      * 
+      * Comments for field 'lastName':
+      * This field represents the value of JSON schema keyword
+      *  'responseCode404->authorsBooks->authors->lastName'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 lastName-length               PIC S9999 COMP-5 SYNC.
+      *        09 lastName                      PIC X(40).
+      * 
+      * Comments for field 'filler':
+      * This is a filler entry to ensure the correct padding for a
+      *  structure. These slack bytes do not contain any application
+      *  data.
+      *      06 filler                        PIC X(2).
       * 
       *  
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  
           01 BAQBASE-RBK02P01.
  
-            03 responseCode200-num           PIC S9(9) COMP-5 SYNC.
+            03 responseCode200-existence     PIC S9(9) COMP-5 SYNC.
             03 responseCode200-dataarea      PIC X(16).
  
  
@@ -384,11 +535,32 @@
              06 url.
                09 url2-length                   PIC S9999 COMP-5 SYNC.
                09 url2                          PIC X(100).
+ 
+             06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
+ 
+             06 owningDepartment.
+               09 Xid                           PIC X(5).
+               09 name-length                   PIC S9999 COMP-5 SYNC.
+               09 name                          PIC X(40).
+               09 contact-length                PIC S9999 COMP-5 SYNC.
+               09 contact                       PIC X(40).
              06 filler                        PIC X(2).
  
          01 RBK02P01-authors.
-           03 authors-length                PIC S9999 COMP-5 SYNC.
-           03 authors                       PIC X(40).
+           03 authors.
+ 
+             06 firstName-existence           PIC S9(9) COMP-5 SYNC.
+ 
+             06 firstName.
+               09 firstName2-length             PIC S9999 COMP-5 SYNC.
+               09 firstName2                    PIC X(40).
+ 
+             06 lastName-existence            PIC S9(9) COMP-5 SYNC.
+ 
+             06 lastName.
+               09 lastName2-length              PIC S9999 COMP-5 SYNC.
+               09 lastName2                     PIC X(40).
+             06 filler                        PIC X(2).
  
          01 RBK02P01-responseCode404.
            03 responseCode404.
@@ -404,8 +576,8 @@
              06 Xtitle-length                 PIC S9999 COMP-5 SYNC.
              06 Xtitle                        PIC X(80).
  
-             06 authors2-num                  PIC S9(9) COMP-5 SYNC.
-             06 authors2-dataarea             PIC X(16).
+             06 authors3-num                  PIC S9(9) COMP-5 SYNC.
+             06 authors3-dataarea             PIC X(16).
  
              06 Xstatus-length                PIC S9999 COMP-5 SYNC.
              06 Xstatus                       PIC X(9).
@@ -432,9 +604,30 @@
              06 url2.
                09 url-length                    PIC S9999 COMP-5 SYNC.
                09 url                           PIC X(100).
+ 
+             06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
+ 
+             06 owningDepartment3.
+               09 Xid                           PIC X(5).
+               09 name-length                   PIC S9999 COMP-5 SYNC.
+               09 name                          PIC X(40).
+               09 contact-length                PIC S9999 COMP-5 SYNC.
+               09 contact                       PIC X(40).
              06 filler                        PIC X(2).
  
-         01 RBK02P01-authors2.
-           03 authors-length                PIC S9999 COMP-5 SYNC.
-           03 authors                       PIC X(40).
+         01 RBK02P01-authors3.
+           03 authors3.
+ 
+             06 firstName2-existence          PIC S9(9) COMP-5 SYNC.
+ 
+             06 firstName2.
+               09 firstName-length              PIC S9999 COMP-5 SYNC.
+               09 firstName                     PIC X(40).
+ 
+             06 lastName2-existence           PIC S9(9) COMP-5 SYNC.
+ 
+             06 lastName2.
+               09 lastName-length               PIC S9999 COMP-5 SYNC.
+               09 lastName                      PIC X(40).
+             06 filler                        PIC X(2).
  

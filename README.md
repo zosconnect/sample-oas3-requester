@@ -7,7 +7,9 @@ This Redbook API requester sample implements a very simple IBM Redbook informati
 This project's gradle build will build the remote endpoint RedbookAPI application war file and also generate the z/OS Connect API requester war files for COBOL and PLI.
 
 ## Instructions
-Follow the instructions in the [IBM Documentation](https://www.ibm.com/docs/en/zos-connect/3.0.0?topic=gstz3-creating-zos-connect-api-requester-project-zos-application) for details on how to build, deploy and run this tutorial sample.
+Follow the instructions in the [IBM Documentation](https://www.ibm.com/docs/en/zos-connect/3.0.0?topic=gstz3-creating-zos-connect-api-requester-project-zos-application) for details on how to build, deploy and run this tutorial sample.   In the **start** folders of COBOL and PLI you will find the partial implementations, not all operations are coded, as an exercise you can complete the code.  Should you wish to view the completed samples review the code in the **finish** folders.
+
+The Patch and Merge operations are complete in both the start and finish versions of the code samples. Please refer to the [IBM Patch documentation](https://www.ibm.com/docs/en/zos-connect/3.0.0?topic=api-using-patch-in-application) to assist in understanding the code.
 
 ## Structure
 * The `COBOL/finish` directory contains the CICS COBOL program BAQHRBKC.cbl, IMS COBOL programs BAQHRBKB.cbl and BAQHRBKT.cbl and the standalone COBOL application BAQHRBKZ.cbl. These programs have all three operations implemented.
@@ -34,10 +36,16 @@ Follow the instructions in the [IBM Documentation](https://www.ibm.com/docs/en/z
 Path **/redbooks**. Method **GET**. Passes an optional author query parameter of type string and expects an array of Redbook objects for a **200** response.
 
 ### getRedbook
-Path **/redbook/{bookName}**. Method **GET**. Passes a title path parameter, and optional author query parameter and optional documentType header parameter. A Redbook object is returned for a **200** response. For a **404 (Not Found)** response a RedbookNotFound object is returned containing a message. A **500** for media type **text/plain** with a string schema.
+Path **/redbook/{title}**. Method **GET**. Passes a title path parameter, and optional author query parameter and optional documentType header parameter. A Redbook object is returned for a **200** response. For a **404 (Not Found)** response a RedbookNotFound object is returned containing a message. A **500** for media type **text/plain** with a string schema.
 
 ### createRedbook
 Path **/redbook/{bookName}**. Method **POST**. Passes a bookName path parameter and a Book object body. Expects a Book object for a **2XX** wildcarded response. A **409 (Conflict)** can also be returned. No other default responses are defined.
+
+### patchRedbook
+Path **/redbook/{title}**. Method **PATCH**. An RFC 6902 compliant patch request. Passes a bookName path parameter and a RFC 6902 Patch document. Expects a Book object for a **200** response. For a **404 (Not Found)** response a RedbookNotFound object is returned containing a message.
+
+### mergeRedbook
+Path **/redbook/m/{title}**. Method **PATCH**. An RFC 7396 compliant patch request. Passes a bookName path parameter and a RFC 7396 Patch document. Expects a Book object for a **200** response. For a **404 (Not Found)** response a RedbookNotFound object is returned containing a message. 
 
 ## Application Component Schemas
 ### Redbooks

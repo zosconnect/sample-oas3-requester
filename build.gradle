@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2023
+ * Copyright IBM Corp. 2023, 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@
  * This build generates a remote endpoint API application war file and
  * generates the z/OS Connect API war file.
  *
- * The COBOL programs BAQHRBKC and BAQHRBKC are contained in the COBOL
- * directory of the project, these programs must be moved to z/OS for
+ * The COBOL and PLI programs are contained in the COBOL and PLI
+ * directories of the project, these programs must be moved to z/OS for
  * compilation.
  *
  * The CSD directory contains a CICS TS CSD update file for the sample.
@@ -60,6 +60,9 @@ war {
 
 dependencies {
     implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.17.0"
+    implementation 'jakarta.json:jakarta.json-api:2.1.3'
+    implementation 'org.eclipse.parsson:parsson:1.1.7'
 }
 
 gradle.startParameter.continueOnFailure = true

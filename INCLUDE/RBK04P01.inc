@@ -1,22 +1,22 @@
  /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  |    <* This file contains the generated language structure(s) for
- |        response JSON schema 'getRedbook_response.json'.
+ |        response JSON schema 'getAllRedbooks_response.json'.
  |       This structure was generated using 'DFHJS2LS' at mapping
  |        level '5.0'. *>
  |  
- |  Dcl BAQBASE_RBK00P01_PTR PTR
- |  Dcl 01 BAQBASE_RBK00P01 BASED(BAQBASE_RBK00P01_PTR),
+ |  Dcl BAQBASE_RBK04P01_PTR PTR
+ |  Dcl 01 BAQBASE_RBK04P01 BASED(BAQBASE_RBK04P01_PTR),
  | 
  | 
  |      <* Data area 'responseCode200_dataarea' contains
- |          'responseCode200_existence' instances of structure
- |          'RBK00P01_responseCode200', each of which represents an
+ |          'responseCode200_num' instances of structure
+ |          'RBK04P01_responseCode200', each of which represents an
  |          instance of JSON schema keyword 'responseCode200'. The
  |          Data area must be read from and written to in BIT mode.
  |         
  |         There should be at least '0' instance(s).
  |         There is no maximum number of instances. *>
- |     03 responseCode200_existence      UNSIGNED FIXED BINARY(32)
+ |     03 responseCode200_num            UNSIGNED FIXED BINARY(32)
  |     UNALIGNED,
  |     03 responseCode200_dataarea       CHAR(16),
  | 
@@ -24,7 +24,7 @@
  | 
  |      <* Data area 'responseCode404_dataarea' contains
  |          'responseCode404_existence' instances of structure
- |          'RBK00P01_responseCode404', each of which represents an
+ |          'RBK04P01_responseCode404', each of which represents an
  |          instance of JSON schema keyword 'responseCode404'. The
  |          Data area must be read from and written to in BIT mode.
  |         
@@ -32,29 +32,15 @@
  |         There is no maximum number of instances. *>
  |     03 responseCode404_existence      UNSIGNED FIXED BINARY(32)
  |     UNALIGNED,
- |     03 responseCode404_dataarea       CHAR(16),
  | 
- | 
- | 
- |      <* Data area 'responseCode500_dataarea' contains
- |          'responseCode500_existence' instances of structure
- |          'RBK00P01_responseCode500', each of which represents an
- |          instance of JSON schema keyword 'responseCode500'. The
- |          Data area must be read from and written to in BIT mode.
- |         
- |         There should be at least '0' instance(s).
- |         There is no maximum number of instances. *>
- |     03 responseCode500_existence      UNSIGNED FIXED BINARY(32)
- |     UNALIGNED,
- | 
- |     03 responseCode500_dataarea       CHAR(16)
+ |     03 responseCode404_dataarea       CHAR(16)
  | 
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'responseCode200_dataarea'. *>
- |  Dcl RBK00P01_responseCode200_PTR PTR
- |  Dcl 01 RBK00P01_responseCode200
- |     BASED(RBK00P01_responseCode200_PTR),
+ |  Dcl RBK04P01_responseCode200_PTR PTR
+ |  Dcl 01 RBK04P01_responseCode200
+ |     BASED(RBK04P01_responseCode200_PTR),
  |    03 responseCode200,
  | 
  |      <* Comments for field 'title':
@@ -69,7 +55,7 @@
  | 
  |  
  |      <* Data area 'authors_dataarea' contains 'authors_num'
- |          instances of structure 'RBK00P01_authors', each of
+ |          instances of structure 'RBK04P01_authors', each of
  |          which represents an instance of JSON schema keyword
  |          'responseCode200->authors'. The Data area must be read
  |          from and written to in BIT mode.
@@ -208,8 +194,8 @@
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'authors_dataarea'. *>
- |  Dcl RBK00P01_authors_PTR PTR
- |  Dcl 01 RBK00P01_authors BASED(RBK00P01_authors_PTR),
+ |  Dcl RBK04P01_authors_PTR PTR
+ |  Dcl 01 RBK04P01_authors BASED(RBK04P01_authors_PTR),
  |    03 authors,
  | 
  |  
@@ -251,9 +237,9 @@
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'responseCode404_dataarea'. *>
- |  Dcl RBK00P01_responseCode404_PTR PTR
- |  Dcl 01 RBK00P01_responseCode404
- |     BASED(RBK00P01_responseCode404_PTR),
+ |  Dcl RBK04P01_responseCode404_PTR PTR
+ |  Dcl 01 RBK04P01_responseCode404
+ |     BASED(RBK04P01_responseCode404_PTR),
  |    03 responseCode404,
  | 
  |      <* Comments for field 'message':
@@ -267,7 +253,7 @@
  |  
  |      <* Data area 'authorsBooks_dataarea' contains
  |          'authorsBooks_num' instances of structure
- |          'RBK00P01_authorsBooks', each of which represents an
+ |          'RBK04P01_authorsBooks', each of which represents an
  |          instance of JSON schema keyword
  |          'responseCode404->authorsBooks'. The Data area must be
  |          read from and written to in BIT mode.
@@ -281,8 +267,8 @@
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'authorsBooks_dataarea'. *>
- |  Dcl RBK00P01_authorsBooks_PTR PTR
- |  Dcl 01 RBK00P01_authorsBooks BASED(RBK00P01_authorsBooks_PTR),
+ |  Dcl RBK04P01_authorsBooks_PTR PTR
+ |  Dcl 01 RBK04P01_authorsBooks BASED(RBK04P01_authorsBooks_PTR),
  |    03 authorsBooks,
  | 
  |      <* Comments for field 'title':
@@ -297,7 +283,7 @@
  | 
  |  
  |      <* Data area 'authors3_dataarea' contains 'authors3_num'
- |          instances of structure 'RBK00P01_authors3', each of
+ |          instances of structure 'RBK04P01_authors3', each of
  |          which represents an instance of JSON schema keyword
  |          'responseCode404->authorsBooks->authors'. The Data area
  |          must be read from and written to in BIT mode.
@@ -443,8 +429,8 @@
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'authors3_dataarea'. *>
- |  Dcl RBK00P01_authors3_PTR PTR
- |  Dcl 01 RBK00P01_authors3 BASED(RBK00P01_authors3_PTR),
+ |  Dcl RBK04P01_authors3_PTR PTR
+ |  Dcl 01 RBK04P01_authors3 BASED(RBK04P01_authors3_PTR),
  |    03 authors3,
  | 
  |  
@@ -485,44 +471,25 @@
  |          or binary data. *>
  |      06 lastName                       CHAR(40) VARYING UNALIGNED
  |  
- |    <* This structure describes one instance of the data in Data
- |        Area 'responseCode500_dataarea'. *>
- |  Dcl RBK00P01_responseCode500_PTR PTR
- |  Dcl 01 RBK00P01_responseCode500
- |     BASED(RBK00P01_responseCode500_PTR),
- | 
- |    <* Comments for field 'responseCode500':
- |       This field represents the value of JSON schema keyword
- |        'responseCode500'.
- |       JSON schema type: 'string'.
- |       This field contains a varying length array of characters
- |        or binary data. *>
- |    03 responseCode500                CHAR(50) VARYING UNALIGNED
- |  
  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
  
  
-    Dcl BAQBASE_RBK00P01_PTR PTR;
-    Dcl 01 BAQBASE_RBK00P01 BASED(BAQBASE_RBK00P01_PTR),
+    Dcl BAQBASE_RBK04P01_PTR PTR;
+    Dcl 01 BAQBASE_RBK04P01 BASED(BAQBASE_RBK04P01_PTR),
 
-       03 responseCode200_existence      UNSIGNED FIXED BINARY(32)
+       03 responseCode200_num            UNSIGNED FIXED BINARY(32)
           UNALIGNED,
        03 responseCode200_dataarea       CHAR(16),
 
 
        03 responseCode404_existence      UNSIGNED FIXED BINARY(32)
           UNALIGNED,
-       03 responseCode404_dataarea       CHAR(16),
-
-
-       03 responseCode500_existence      UNSIGNED FIXED BINARY(32)
-          UNALIGNED,
-       03 responseCode500_dataarea       CHAR(16);
+       03 responseCode404_dataarea       CHAR(16);
 
  
-    Dcl RBK00P01_responseCode200_PTR PTR;
-    Dcl 01 RBK00P01_responseCode200
-          BASED(RBK00P01_responseCode200_PTR),
+    Dcl RBK04P01_responseCode200_PTR PTR;
+    Dcl 01 RBK04P01_responseCode200
+          BASED(RBK04P01_responseCode200_PTR),
       03 responseCode200,
         06 title                          CHAR(80) VARYING UNALIGNED,
  
@@ -561,8 +528,8 @@
           09 name                           CHAR(40) VARYING UNALIGNED,
           09 contact                        CHAR(40) VARYING UNALIGNED;
  
-    Dcl RBK00P01_authors_PTR PTR;
-    Dcl 01 RBK00P01_authors BASED(RBK00P01_authors_PTR),
+    Dcl RBK04P01_authors_PTR PTR;
+    Dcl 01 RBK04P01_authors BASED(RBK04P01_authors_PTR),
       03 authors,
  
         06 firstName_existence            UNSIGNED FIXED BINARY(32)
@@ -575,9 +542,9 @@
  
         06 lastName                       CHAR(40) VARYING UNALIGNED;
  
-    Dcl RBK00P01_responseCode404_PTR PTR;
-    Dcl 01 RBK00P01_responseCode404
-          BASED(RBK00P01_responseCode404_PTR),
+    Dcl RBK04P01_responseCode404_PTR PTR;
+    Dcl 01 RBK04P01_responseCode404
+          BASED(RBK04P01_responseCode404_PTR),
       03 responseCode404,
         06 message                        CHAR(50) VARYING UNALIGNED,
  
@@ -586,8 +553,8 @@
         06 authorsBooks_dataarea          CHAR(16);
  
  
-    Dcl RBK00P01_authorsBooks_PTR PTR;
-    Dcl 01 RBK00P01_authorsBooks BASED(RBK00P01_authorsBooks_PTR),
+    Dcl RBK04P01_authorsBooks_PTR PTR;
+    Dcl 01 RBK04P01_authorsBooks BASED(RBK04P01_authorsBooks_PTR),
       03 authorsBooks,
         06 title                          CHAR(80) VARYING UNALIGNED,
  
@@ -626,8 +593,8 @@
           09 name                           CHAR(40) VARYING UNALIGNED,
           09 contact                        CHAR(40) VARYING UNALIGNED;
  
-    Dcl RBK00P01_authors3_PTR PTR;
-    Dcl 01 RBK00P01_authors3 BASED(RBK00P01_authors3_PTR),
+    Dcl RBK04P01_authors3_PTR PTR;
+    Dcl 01 RBK04P01_authors3 BASED(RBK04P01_authors3_PTR),
       03 authors3,
  
         06 firstName2_existence           UNSIGNED FIXED BINARY(32)
@@ -639,9 +606,4 @@
           UNALIGNED,
  
         06 lastName                       CHAR(40) VARYING UNALIGNED;
- 
-    Dcl RBK00P01_responseCode500_PTR PTR;
-    Dcl 01 RBK00P01_responseCode500
-          BASED(RBK00P01_responseCode500_PTR),
-      03 responseCode500                CHAR(50) VARYING UNALIGNED;
  

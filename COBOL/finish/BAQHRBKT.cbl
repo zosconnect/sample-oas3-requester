@@ -24,6 +24,8 @@
       *      GARB - Get All Redbooks                                  *
       *      GRBK - Get Redbook                                       *
       *      CRBK - Create Redbook                                    *
+      *      PRBK - Patch Redbook                                     *
+      *      MRBK - Merge Redbook                                     *
       *                                                               *
       * Pass in via transaction message, E.g:                         *
       *    QUE TRAN NAME(BAQHRBKT) OPTION(ENQ) DATA(GARB)             *
@@ -35,7 +37,7 @@
       *****************************************************************
        IDENTIFICATION DIVISION.
        PROGRAM-ID. BAQHRBKT.
-       
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
@@ -44,7 +46,7 @@
        COPY BAQHCONC.
 
       * IMS structures
-       COPY BAQHCIMS. 
+       COPY BAQHCIMS.
 
       * API-INFO for Operation getRedbook
        COPY RBK00I01.
@@ -52,8 +54,14 @@
       * API-INFO for Operation createRedbook
        COPY RBK01I01.
 
-      * API-INFO for Operation getAllRedbooks
+      * API-INFO for Operation patchRedbook
        COPY RBK02I01.
+
+      * API-INFO for Operation mergeRedbook
+       COPY RBK03I01.
+
+      * API-INFO for Operation getAllRedbooks
+       COPY RBK04I01.
 
       * Pointer to API-INFO structure
        01 WS-API-INFO        USAGE POINTER VALUE NULL.
@@ -67,8 +75,14 @@
       * Request structure for Operation createRedbook
        COPY RBK01Q01.
 
-      * Request structure for Operation getAllRedbooks
+      * Request structure for Operation patchRedbook
        COPY RBK02Q01.
+
+      * Request structure for Operation mergeRedbook
+       COPY RBK03Q01.
+
+      * Request structure for Operation getAllRedbooks
+       COPY RBK04Q01.
 
       * Set DEBUG state, 1 for Tracing, 0 without.
        01 WS-DEBUG           PIC 9 COMP VALUE 0.
@@ -116,7 +130,7 @@
              05 FILLER         PIC X(11).
 
        01 TEMP-PTR USAGE POINTER VALUE NULL.
-      
+
        77  CEE3DLY             PIC X(8) VALUE 'CEE3DLY'.
        01  SECONDS             PIC S9(9) COMP-5.
 
@@ -132,12 +146,18 @@
       * Response structure for Operation createRedbook
        COPY RBK01P01.
 
-      * Response structure for Operation getAllRedbooks
+      * Response structure for Operation patchRedbook
        COPY RBK02P01.
+
+      * Response structure for Operation mergeRedbook
+       COPY RBK03P01.
+
+      * Response structure for Operation getAllRedbooks
+       COPY RBK04P01.
 
       * IO Program Control Block - interface to IMS message queue
       * IOPCB implies using the queue
-      * LTERM-NAME is the name of the transaction. 
+      * LTERM-NAME is the name of the transaction.
       * TPSTATUS is the return code
        01  IOPCB.
            02  LTERM-NAME   PIC X(8).
@@ -151,35 +171,36 @@
       *----------------------------------------------------------------*
        A-MAINLINE SECTION.
        A-010.
-    
+
       *  Establish start position for sequential processing
            CALL CBLTDLI USING DLI-GET-UNIQUE, IOPCB, PARM-BUFFER
-   
+
            IF TPSTATUS IS NOT EQUAL TO DLI-STATUS-OK THEN
                DISPLAY 'FAILED WITH STATUS CODE(' TPSTATUS ')'
                GOBACK
-           END-IF 
-      
+           END-IF
+
       * Get the next segment for processing
            CALL CBLTDLI USING DLI-GET-NEXT, IOPCB, PARM-BUFFER
              IF TPSTATUS IS EQUAL TO SPACES OR DLI-MESSAGE-EXIST
                                             OR DLI-NO-MORE-MESSAGE
-                                            OR DLI-NO-MORE-SEGMENT              
-             THEN    
+                                            OR DLI-NO-MORE-SEGMENT
+             THEN
       * A segment was obtained. Validate it.
                IF PARM-LENGTH LESS THAN 17 THEN
                  DISPLAY 'PLEASE SPECIFY OPERATION TO CALL AS PARAMETER'
-                 DISPLAY 'VALID OPERATIONS ARE GARB, GRBK and CRBK'
+                 DISPLAY 'VALID OPERATIONS ARE GARB, GRBK, CRBK, PRBK'
+                     ' and MRBK.'
                  GOBACK
                END-IF
            END-IF
-      
+
       * We're only expecting one segment so continue processing without
       * a loop over the DLI-GET-NEXT call
            IF DEBUG = 'DEBUG' THEN
             MOVE 1 TO WS-DEBUG
            END-IF
-      
+
            IF WS-DEBUG = 1 THEN
              DISPLAY OPERATION ' A-MAINLINE Entry.'.
 
@@ -249,6 +270,14 @@
            ELSE IF OPERATION = 'CRBK' THEN
               PERFORM CC-CREATE-REDBOOK
 
+      *    PRBK Title
+           ELSE IF OPERATION = 'PRBK' THEN
+              PERFORM CD-PATCH-REDBOOK
+
+      *    MRBK Title
+           ELSE IF OPERATION = 'MRBK' THEN
+              PERFORM CE-MERGE-REDBOOK
+
       *    Unknown request
            ELSE
               DISPLAY 'Operation ' OPERATION ' UNKNOWN'
@@ -266,11 +295,11 @@
       *
       * Operation getAllRedbooks
       *
-      * Sets the content of the BAQBASE-RBK02Q01 Request structure
+      * Sets the content of the BAQBASE-RBK04Q01 Request structure
       * ready for the BAQEXEC Call. The call is then made to the
       * API End Point (EP) via BAQEXEC and the z/OS Connect server.
       *
-      * Upon success, the BAQBASE-RBK02P01 structure is returned
+      * Upon success, the BAQBASE-RBK04P01 structure is returned
       * and dependent of the EP HTTP Status Code a DATA AREA element
       * is addressed and processed.
       *----------------------------------------------------------------*
@@ -280,8 +309,8 @@
               DISPLAY OPERATION ' CA-GET-ALL-REDBOOKS Entry.'.
 
       * Prepare the request
-           SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK02Q01.
-           MOVE LENGTH OF BAQBASE-RBK02Q01 TO BAQ-REQ-BASE-LENGTH.
+           SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK04Q01.
+           MOVE LENGTH OF BAQBASE-RBK04Q01 TO BAQ-REQ-BASE-LENGTH.
 
       * For this request we want to get all Redbook Inventory
       * and not the inventory for a particular author so we set
@@ -291,14 +320,14 @@
       * Ever wondered why some generated fields are prefix with 'X'?
       * It is because, as in this case, a clash exists with the
       * language reserved keyword list. AUTHOR is a COBOL keyword.
-           MOVE 0 TO Xauthor-existence of BAQBASE-RBK02Q01.
+           MOVE 0 TO Xauthor-existence of BAQBASE-RBK04Q01.
 
        CA-020.
       * Call the API
       * Passing the address of the API-INFO structure required for the
-      * BAQEXEC call. Section X-EXEC is a reuseable routine that is
+      * BAQEXEC call. Section X-EXEC is a reusable routine that is
       * used for all API calls.
-           SET WS-API-INFO TO ADDRESS OF BAQ-API-INFO-RBK02I01.
+           SET WS-API-INFO TO ADDRESS OF BAQ-API-INFO-RBK04I01.
            PERFORM X-EXEC.
 
       * Check that the call was successful, if not exit the section
@@ -330,7 +359,7 @@
       *
       * The address of the returned BAQBASE structure is returned in
       * the BAQ-RESPONSE-AREA so set the structure to that address
-           SET ADDRESS OF BAQBASE-RBK02P01 to BAQ-RESP-BASE-ADDRESS.
+           SET ADDRESS OF BAQBASE-RBK04P01 to BAQ-RESP-BASE-ADDRESS.
 
       * For this operation the OAS document defines two responses
       * 200-OK and 404-NOTFOUND, if the remote endpoint application
@@ -350,7 +379,7 @@
       * Check the remote endpoint HTTP status code and check that a
       * response was received, let's check the NOTFOUND case first.
            IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
-              IF responseCode404-existence OF BAQBASE-RBK02P01 > 0 THEN
+              IF responseCode404-existence OF BAQBASE-RBK04P01 > 0 THEN
 
       * The Redbook API provided a RedbookNotFound response body
       * in a Data Area, the name of that Data Area is located in
@@ -358,10 +387,10 @@
       * Set this name in to WS-DATA-AREA-NAME and use the common
       * routines X-GET-DATA-AREA-ELEMENT and set the expected length
       * of the returned data in WS-ELEMENT-LENGTH.
-                 MOVE responseCode404-dataarea OF BAQBASE-RBK02P01 TO
+                 MOVE responseCode404-dataarea OF BAQBASE-RBK04P01 TO
                      WS-DATA-AREA-NAME
 
-                 MOVE LENGTH OF RBK02P01-responseCode404 TO
+                 MOVE LENGTH OF RBK04P01-responseCode404 TO
                     WS-ELEMENT-LENGTH
 
                  PERFORM X-GET-DATA-AREA-ELEMENT
@@ -370,20 +399,20 @@
                  IF WS-RC = FAILED THEN EXIT
 
       * BAQGETN has worked and returned the address of the Data Area
-      * that contains the RBK02P01-responseCode404 data structure.
+      * that contains the RBK04P01-responseCode404 data structure.
       * Lets address that and display the returned message which
       * should indicate that there are no Redbooks in the repository.
       *
-      * The RBK02P01-responseCode404 also contains a dynamic array
+      * The RBK04P01-responseCode404 also contains a dynamic array
       * Data Area of authors Redbooks, but for this operation this
       * array is not set
-                 SET ADDRESS OF RBK02P01-responseCode404 TO WS-ELEMENT
+                 SET ADDRESS OF RBK04P01-responseCode404 TO WS-ELEMENT
                  MOVE BAQ-RESP-STATUS-CODE TO WS-STATUS-CODE
                  STRING OPERATION
                   ' API EP returned HTTP Status Code '
                   WS-STATUS-CODE
-                  ' MESSAGE ' Xmessage OF RBK02P01-responseCode404
-                      (1:Xmessage-length OF RBK02P01-responseCode404)
+                  ' MESSAGE ' Xmessage OF RBK04P01-responseCode404
+                      (1:Xmessage-length OF RBK04P01-responseCode404)
                   DELIMITED BY SIZE
                   INTO WS-DISPLAY-MSG
 
@@ -408,14 +437,14 @@
       * that details how many elements exist in the array and we will
       * use X-GET-DATA-AREA-ELEMENT to fetch each one in turn.
            IF BAQ-RESP-STATUS-CODE = 200 THEN
-              IF responseCode200-num OF BAQBASE-RBK02P01 > 0 THEN
+              IF responseCode200-num OF BAQBASE-RBK04P01 > 0 THEN
 
                  DISPLAY OPERATION ' Redbook Inventory'
 
                  PERFORM CAA-GET-EACH-REDBOOK VARYING WS-INDEX
                     FROM 1 BY 1
                     UNTIL WS-INDEX >
-                       responseCode200-num OF BAQBASE-RBK02P01 OR
+                       responseCode200-num OF BAQBASE-RBK04P01 OR
                        WS-RC = FAILED
               ELSE
                  DISPLAY OPERATION
@@ -441,10 +470,10 @@
            IF WS-DEBUG = 1 THEN
               DISPLAY OPERATION ' CAA-GET-EACH-REDBOOK Entry.'.
 
-           MOVE responseCode200-dataarea OF BAQBASE-RBK02P01 TO
+           MOVE responseCode200-dataarea OF BAQBASE-RBK04P01 TO
                 WS-DATA-AREA-NAME.
 
-           MOVE LENGTH OF RBK02P01-responseCode200 TO
+           MOVE LENGTH OF RBK04P01-responseCode200 TO
                                    WS-ELEMENT-LENGTH.
 
            PERFORM X-GET-DATA-AREA-ELEMENT.
@@ -453,19 +482,20 @@
 
       * We have fetched the Redbook from the Data Area so set the
       * address of the 01 level data structure.
-           SET ADDRESS OF RBK02P01-responseCode200 to WS-ELEMENT.
+           SET ADDRESS OF RBK04P01-responseCode200 to WS-ELEMENT.
 
       * For simplicity lets display the content of the Redbook data
       * structure
       *
       * Note that optional fields have an '-existence' field to denote
       * if the field exists or not.
+
            IF WS-DEBUG = 1 THEN
                DISPLAY OPERATION ' Redbook number ' WS-INDEX.
 
            STRING OPERATION ' Title '
-             Xtitle OF RBK02P01-responseCode200
-                  (1:Xtitle-length OF RBK02P01-responseCode200)
+             Xtitle OF RBK04P01-responseCode200
+                  (1:Xtitle-length OF RBK04P01-responseCode200)
            DELIMITED BY SIZE
            INTO WS-DISPLAY-MSG
 
@@ -483,21 +513,21 @@
            PERFORM CAAA-GET-EACH-AUTHOR VARYING WS-INDEX-2
               FROM 1 BY 1
               UNTIL WS-INDEX-2 >
-                 authors-num OF RBK02P01-responseCode200 OR
+                 authors-num OF RBK04P01-responseCode200 OR
                  WS-RC = FAILED.
 
            IF WS-DEBUG = 1 THEN
                DISPLAY OPERATION '  Status '
-                 Xstatus OF RBK02P01-responseCode200
-                      (1:Xstatus-length OF RBK02P01-responseCode200).
+                 Xstatus OF RBK04P01-responseCode200
+                      (1:Xstatus-length OF RBK04P01-responseCode200).
 
            IF publicationDate-existence
-                 OF RBK02P01-responseCode200 > 0 THEN
+                 OF RBK04P01-responseCode200 > 0 THEN
 
                IF WS-DEBUG = 1 THEN
                    DISPLAY OPERATION '  Publication Date '
-                   publicationDate2 OF RBK02P01-responseCode200
-                 (1:publicationDate2-length OF RBK02P01-responseCode200)
+                   publicationDate2 OF RBK04P01-responseCode200
+                 (1:publicationDate2-length OF RBK04P01-responseCode200)
                END-IF
            END-IF.
 
@@ -519,10 +549,10 @@
            IF WS-DEBUG = 1 THEN
               DISPLAY OPERATION ' CAAA-GET-EACH-AUTHOR Entry.'.
 
-           MOVE authors-dataarea OF RBK02P01-responseCode200 TO
+           MOVE authors-dataarea OF RBK04P01-responseCode200 TO
                 WS-DATA-AREA-NAME.
 
-           MOVE LENGTH OF RBK02P01-authors TO
+           MOVE LENGTH OF RBK04P01-authors TO
                                    WS-ELEMENT-LENGTH.
 
            PERFORM X-GET-DATA-AREA-ELEMENT.
@@ -531,15 +561,17 @@
 
       * We have fetched the Author from the Data Area so set the
       * address of the 01 level data structure.
-           SET ADDRESS OF RBK02P01-authors to WS-ELEMENT.
+           SET ADDRESS OF RBK04P01-authors to WS-ELEMENT.
 
            IF WS-DEBUG = 1 THEN
                DISPLAY OPERATION '   Author ' WS-INDEX-2.
 
            IF WS-DEBUG = 1 THEN
                DISPLAY OPERATION '    '
-                 authors OF RBK02P01-authors
-                      (1:authors-length OF RBK02P01-authors).
+                 firstName2 OF RBK04P01-authors
+                      (1:firstName2-length OF RBK04P01-authors) ' '
+                 lastName2 OF RBK04P01-authors
+                      (1:lastName2-length OF RBK04P01-authors).
 
        CAAA-999.
            IF WS-DEBUG = 1 THEN
@@ -648,19 +680,19 @@
 
                   MOVE responseCode404-dataarea OF BAQBASE-RBK00P01
                      TO WS-DATA-AREA-NAME
-   
+
                   MOVE LENGTH OF RBK00P01-responseCode404 TO
                      WS-ELEMENT-LENGTH
-   
+
                   PERFORM X-GET-DATA-AREA-ELEMENT
-   
+
                   IF WS-RC = FAILED THEN GO TO CB-999 END-IF
 
       * We have fetched the RBK00P01-responseCode404 structure from
       * the Data Area so set the address
                   SET ADDRESS OF RBK00P01-responseCode404 to WS-ELEMENT
-   
-                  IF Xmessage-length OF RBK00P01-responseCode404 > 1 
+
+                  IF Xmessage-length OF RBK00P01-responseCode404 > 1
                    THEN
                      STRING OPERATION
                          ' Message '
@@ -668,7 +700,7 @@
                          (1:Xmessage-length OF RBK00P01-responseCode404)
                          DELIMITED BY SIZE
                          INTO WS-DISPLAY-MSG
-   
+
                      PERFORM X-WRITE-DISPLAY-MSG
                      MOVE FAILED TO WS-RC
                      GO TO CB-999
@@ -887,53 +919,93 @@
                                  TO WS-DATA-AREA-NAME.
 
       * Now add the authors to the request Data Area
-           MOVE 12 TO authors-length OF RBK01Q01-authors.
-           MOVE "Skyla Loomis" TO authors OF RBK01Q01-authors.
+           MOVE 5 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Skyla" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 6 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Loomis" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 12 TO authors-length OF RBK01Q01-authors.
-           MOVE "Kyle Charlet" TO authors OF RBK01Q01-authors.
+           MOVE 4 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Kyle" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 7 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Charlet" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 14 TO authors-length OF RBK01Q01-authors.
-           MOVE "Suman Gopinath" TO authors OF RBK01Q01-authors.
+           MOVE 5 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Suman" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 8 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Gopinath" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 15 TO authors-length OF RBK01Q01-authors.
-           MOVE "Peter McCaffrey" TO authors OF RBK01Q01-authors.
+           MOVE 5 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Peter" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 9 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "McCaffrey" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 10 TO authors-length OF RBK01Q01-authors.
-           MOVE "Tim Brooks" TO authors OF RBK01Q01-authors.
+           MOVE 3 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Tim" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 6 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Brooks" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 13 TO authors-length OF RBK01Q01-authors.
-           MOVE "Juergen Holtz" TO authors OF RBK01Q01-authors.
+           MOVE 7 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Juergen" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 5 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Holtz" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 18 TO authors-length OF RBK01Q01-authors.
-           MOVE "Bryant Panyarachun" TO authors OF RBK01Q01-authors.
+           MOVE 6 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Bryant" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 11 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Panyarachun" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 11 TO authors-length OF RBK01Q01-authors.
-           MOVE "Purvi Patel" TO authors OF RBK01Q01-authors.
+           MOVE 5 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Purvi" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 5 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Patel" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 23 TO authors-length OF RBK01Q01-authors.
-           MOVE "Mythili Venkatakrishnan" TO authors OF RBK01Q01-authors.
+           MOVE 7 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Mythili" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 15 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Venkatakrishnan" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
-           MOVE 10 TO authors-length OF RBK01Q01-authors.
-           MOVE "Yichong Yu" TO authors OF RBK01Q01-authors.
+           MOVE 7 TO firstName2-length OF RBK01Q01-authors.
+           MOVE "Yichong" TO firstName2 OF RBK01Q01-authors.
+           MOVE 1 TO firstName-existence OF RBK01Q01-authors.
+           MOVE 2 TO lastName2-length OF RBK01Q01-authors.
+           MOVE "Yu" TO lastName2 OF RBK01Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK01Q01-authors.
            PERFORM X-PUT-DATA-AREA-ELEMENT.
            IF WS-RC = FAILED THEN GO TO CCAA-999.
 
@@ -941,6 +1013,821 @@
            IF WS-DEBUG = 1 THEN
               DISPLAY OPERATION ' CCAA-PUT-EACH-AUTHOR. WS-RC='
                    WS-RC.
+
+           EXIT.
+
+      *----------------------------------------------------------------*
+      * CD-PATCH-REDBOOK
+      *
+      * Operation patchRedbook - RFC6902
+      *
+      * Sets the content of the BAQBASE-RBK02Q01 Request structure
+      * ready for the BAQEXEC Call. The call is then made to the
+      * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+      *
+      * Upon success, the BAQBASE-RBK02P01 structure is returned
+      * and dependent of the EP HTTP Status Code a DATA AREA element
+      * is got and processed.
+      *----------------------------------------------------------------*
+       CD-PATCH-REDBOOK SECTION.
+       CD-010.
+           IF WS-DEBUG = 1 THEN
+              DISPLAY OPERATION ' CD-PATCH-REDBOOK Entry.'.
+
+           INITIALIZE BAQBASE-RBK02Q01.
+
+      * Using the PATCH method in an API requests that a server object
+      * is updated by a Patch Document on a field by field basis rather
+      * then a complete replacement as would happen if using the PUT
+      * method.
+      *
+      * This procedure will invoke the patchRedbook operation in the
+      * Redbook management API. Operation patchRedbook uses media-type
+      * application/json-patch+json which is defined by RFC 6902.
+      * This RFC (https://www.rfc-editor.org/rfc/rfc6902) defines
+      * the format of the patch document used to update the entity
+      * via the Rest API in a server.
+      *
+      * We will see in procedure CE-MERGE-REDBOOK the use of a patch
+      * document that conforms to RFC 7396.
+      * This RFC (https://www.rfc-editor.org/rfc/rfc7396) defines
+      * a different patch document format and media-type
+      * application/merge-patch+json.
+      *
+      * The RFC have different advantages and disadvantages,
+      * z/OS Connect supports both standards and your API will
+      * choose which to employ via the OpenApi definition of the API.
+      *
+      * The patch document is constructed by z/OS Connect based on the
+      * settings made to the BAQBASE-RBK02Q01 request structure. The
+      * COBOL Copybook used for both RFC are similar, but the array
+      * support is limited in RFC 7396.
+      *
+      * Once z/OS Connect has constructed the patch document conforming
+      * to the requested media-type (RFC) from the binary COBOL
+      * structure this patch document is sent to the Rest API
+      * endpoint service. This is received at its path/Patch function
+      * and using appropriate function the patch document can be applied
+      * to an entity.  See method patchRedbook in the Java class
+      * RedbookResource.java for a Java example that uses
+      * Jakarta JsonPatch classes to update a Java Redbook object.
+      *
+      * In this procedure we are going to set up a request that will
+      * produce a patch document that will perform a number of updates
+      * on a Redbook object. So for Redbook
+      * 'ABCs of IBM zOS System Programming Volume 1' we are going
+      * to update the Redbook to represent a fictitious new version of
+      * the Redbook.
+      *
+      * 1. Update the URL of the Redbooks location.
+      * 2. Update the owning departments Contact.
+      * 3. Remove an author as the section has been replaced.
+      * 4. Add a new Author to the Authors array
+      * 5. Delete the size property as it is not used
+      * 6. Add a 'version' property dynamically and set it to 2.
+      *
+      * These updates show a selection of Patch goals and how we
+      * manipulate the operations Request structure to achieve these
+      * goals.
+      *
+      * Lets setup the Request structure BAQBASE-RBK02Q01 then
+      * make the call to z/OS Connect via the Host API verbs.
+
+      * 1. Update the URL of the redbook location
+      *
+      * Each property defined in the JSON Schema object when translated
+      * to COBOL has a field of the same (or similar) name with the
+      * suffix -patch-operation for a simple field or sub structure
+      * or -patch-item for an array structure.
+      *
+      * In these fields we set the operation that we want to perform
+      * on a particular field, if a -patch-operation field contains a
+      * space then no update is made to the property on the Rest API
+      * server.  See Patch product documentation for full details.
+      *
+      * Set the value 'U' for update to the url-patch-operation field
+      * and set the new data.
+           MOVE 'U' TO url-patch-operation OF BAQBASE-RBK02Q01.
+           MOVE 13 to url-length OF BAQBASE-RBK02Q01.
+           MOVE 'http://newurl' TO url OF BAQBASE-RBK02Q01.
+
+      * 2. Update the owning departments Contact.
+      *
+      * owningDepartment is a property of type object so this is an
+      * example of updating an object within an object.
+      *
+      * Set the value 'U' for update to the contact-patch-operation
+      * field and set the new data for contact.
+      *
+      * If we wanted to update the whole owningDepartment we could
+      * set 'U' in the field ngDepartment-patch-operation and then
+      * set the data in each field and the whole property object
+      * will update.
+      *
+      * Note the owningDepartment-patch-operation field has
+      * been truncated as the field name is too long to fit. To
+      * shorten the -patch-operation to -pchop set the Requester
+      * Gradle plugin option shortSuffix: yes. The field will then
+      * generate as owningDepartment-pchop.  See the product
+      * documentation for details on all the suffixes affected by
+      * this option.
+           MOVE 'U' TO contact-patch-operation OF BAQBASE-RBK02Q01.
+           MOVE 14 to contact-length OF BAQBASE-RBK02Q01.
+           MOVE 'A. Contact' TO contact OF BAQBASE-RBK02Q01.
+
+      * 3. Remove an author as the section has been replaced.
+      *
+      * The Author property is of type array and the Redbook has a
+      * number of authors. In this example update we want to remove
+      * author 'Luiz Fadel' from the Redbook.
+      *
+      * Any array update is controlled by a field suffixed -patch-item
+      * (or -pchitm if option shortSuffix is set to yes).
+      * For our Author array we want to remove the second author 'Luiz'
+      * We set authors-patch-item to '2' to state we want to change the
+      * second array element.
+      *
+      * -patch-item fields contain either a single array item number
+      * or a list of array item numbers that are to be updated. Numbers
+      * can be specified as ranges. See the product documentation for
+      * full details.
+      *
+      * We set the authors-num field to 1 to state there is one array
+      * element that we want to process. Any -num field should equal the
+      * number of elements specified in the corresponding -patch-item
+      * field. e.g. if authors-patch-item was '1, 5-7' then
+      * authors-num would be 4.
+      *
+      * If we wanted to update the last name of the author we would set
+      * 'U' in the last-name-patch-operation field and supply a new
+      * name. Here we want to delete the entire Author item so we set
+      * each -patch-operation field in the sub structure to 'D' to
+      * state the entire array item is to be deleted.
+           MOVE '2' TO authors-patch-item OF BAQBASE-RBK02Q01.
+           MOVE 1 TO authors-num OF BAQBASE-RBK02Q01.
+           MOVE "AUTHOR-DATA-AREA" TO authors-dataarea
+                                              OF BAQBASE-RBK02Q01.
+
+
+           INITIALIZE RBK02Q01-authors.
+           MOVE 'D' TO firstName-patch-operation OF RBK02Q01-authors.
+           MOVE 'D' TO lastName-patch-operation OF RBK02Q01-authors.
+
+           SET WS-ELEMENT TO ADDRESS OF RBK02Q01-authors.
+           MOVE LENGTH OF RBK02Q01-authors TO WS-ELEMENT-LENGTH.
+           MOVE authors-dataarea OF BAQBASE-RBK02Q01
+                                    TO WS-DATA-AREA-NAME.
+
+      * Now add the delete author element to the request Data Area
+           PERFORM X-PUT-DATA-AREA-ELEMENT.
+           IF WS-RC = FAILED THEN GO TO CD-999.
+
+      * 4. Add a new Author to the Authors array
+      *
+      * We also want to add a new author to the array so we want to
+      * change the fields above slightly.  To specify a new array
+      * item we use the '+' symbol as the last element of the
+      * -patch-item list. So now we have set up the array to delete
+      * one author and add another.  When adding a new array element
+      * the -patch-operation fields do not need to be set to any value.
+           MOVE '2,+' TO authors-patch-item OF BAQBASE-RBK02Q01.
+           MOVE 2 to authors-num OF BAQBASE-RBK02Q01.
+
+           INITIALIZE RBK02Q01-authors.
+           MOVE 'New' TO firstName OF RBK02Q01-authors.
+           Move 3 TO firstName-length OF RBK02Q01-authors.
+           MOVE 'Author' TO lastName OF RBK02Q01-authors.
+           Move 6 TO lastName-length OF RBK02Q01-authors.
+
+      * Now add the next author element to the request Data Area
+           PERFORM X-PUT-DATA-AREA-ELEMENT.
+           IF WS-RC = FAILED THEN GO TO CD-999.
+
+      * 5. Delete the size property as it is not used
+      *
+      * To remove a property from an object we set its -patch-operation
+      * field to 'D' for delete.
+           MOVE 'D' TO sizeMB-patch-operation OF BAQBASE-RBK02Q01.
+
+      * 6. Add a 'version' property dynamically and set it to 2.
+      *
+      * To be able to add new properties dynamically to an existing
+      * object the objects schema must specify
+      * additionalProperties: true in the OpenApi operation RequestBody
+      * schema definition.
+      *
+      * This setting states the schema object can have extra properties
+      * that are not defined by the schema.  Typically these are stored
+      * in a Map or Dictionary defined in the Rest API server entity
+      * class.
+      *
+      * For PATCH the way we specify additional properties in COBOL is
+      * no different from a PUT or POST operation that supports
+      * additional properties, however the generated Patch document
+      * consumed by the Rest API is different.
+
+      * We have now specified a number of field updates in the
+      * BAQBASE-RBK02Q01 Request structure we can now make the call to
+      * z/OS Connect via the Host API verbs to process the structure
+      * and call the endpoint Rest API with a Patch document which will
+      * be processed by the API.
+      *
+      * Here we have chosen to group a number of updates together and
+      * process in one call, if desired, each update could be done
+      * individually by setting the BAQBASE-RBK02Q01 fields then calling
+      * BAQEXEC to call z/OS Connect, then initialize the
+      * BAQBASE-RBK02Q01 structure again, update as appropriate and
+      * call BAQEXEC again.
+           SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK02Q01.
+           MOVE LENGTH OF BAQBASE-RBK02Q01 TO BAQ-REQ-BASE-LENGTH.
+
+           MOVE 'ABCs of IBM zOS System Programming Volume 1'
+                   TO Xtitle OF BAQBASE-RBK02Q01.
+           MOVE 44 to Xtitle-length OF BAQBASE-RBK02Q01.
+
+       CD-020.
+      * Call the API
+      * Passing the address of the API-INFO structure required for the
+      * BAQEXEC call. Section X-EXEC is a reusable routine that is
+      * used for all API calls.
+           SET WS-API-INFO TO ADDRESS OF BAQ-API-INFO-RBK02I01.
+           PERFORM X-EXEC.
+
+      * Check that the call was successful, if not exit the section
+      * Routine X-EXEC has displayed the error responses
+           IF BAQ-ERROR THEN
+              DISPLAY OPERATION ' CD-PATCH-REDBOOK BAQEXEC problem'
+              DISPLAY BAQ-ZCON-RETURN-MESSAGE
+                       (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
+              MOVE FAILED TO WS-RC
+              GO TO CA-999
+           END-IF.
+
+           IF BAQ-WARNING THEN
+              DISPLAY OPERATION ' CD-PATCH-REDBOOK BAQEXEC problem'
+              DISPLAY BAQ-RESP-STATUS-MESSAGE
+                       (1:BAQ-RESP-STATUS-MESSAGE-LEN)
+              MOVE FAILED TO WS-RC
+              GO TO CA-999
+           END-IF.
+
+       CD-030.
+      * The BAQHAPI has successfully called remote endpoint API and that
+      * API has returned a HTTP status code that was defined in the
+      * Open API document for the called operation.  This could be an
+      * error HTTP status code, but as long as it is defined in the OAS
+      * document then BAQHAPI sees this as a successful call so now we
+      * must address the returned base structure and interrogate the
+      * returned responses in more detail
+      *
+      * The address of the returned BAQBASE structure is returned in
+      * the BAQ-RESPONSE-AREA so set the structure to that address
+           SET ADDRESS OF BAQBASE-RBK02P01 to BAQ-RESP-BASE-ADDRESS.
+
+      * For this operation the OAS document defines two responses
+      * 200-OK and 404-NOTFOUND, if the remote endpoint application
+      * returns any other HTTP status code then a status of BAQ-WARNING
+      * is returned and the endpoint response is returned in
+      * BAQ-RESP-STATUS-MESSAGE, first 1024 characters.
+      *
+      * If we have reached here we know the remote endpoint status code
+      * is either 404-NOTFOUND or 200-OK. Depending on the status code
+      * this determines which Data Area has been returned. See
+      * z/OS connect documentation for details on what a Data Area is.
+      * In short it is an area of memory that is described by a
+      * generated 01 level data structure, it is dynamic in length and
+      * used to reference the returned data on a per HTTP status code
+      * bases and also for referencing dynamic length arrays.
+
+      * Check the remote endpoint HTTP status code and check that a
+      * response was received, lets do the NOTFOUND case first.
+           IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
+              IF responseCode404-existence OF BAQBASE-RBK02P01 > 0 THEN
+
+      * The Redbook API provided a RedbookNotFound response body
+      * in a Data Area, the name of that Data Area is located in
+      * responseCode404-dataarea in the BAQBASE data structure.
+      * Set this name in to WS-DATA-AREA-NAME and use the common
+      * routines X-GET-DATA-AREA-ELEMENT and set the expected length
+      * of the returned data in WS-ELEMENT-LENGTH.
+                 MOVE responseCode404-dataarea OF BAQBASE-RBK02P01 TO
+                     WS-DATA-AREA-NAME
+
+                 MOVE LENGTH OF RBK02P01-responseCode404 TO
+                    WS-ELEMENT-LENGTH
+
+                 PERFORM X-GET-DATA-AREA-ELEMENT
+
+      * If WS-RC is failed the BAQGETN call failed
+                 IF WS-RC = FAILED THEN EXIT
+
+      * BAQGETN has worked and returned the address of the Data Area
+      * that contains the RBK04P01-responseCode404 data structure.
+      * Lets address that and display the returned message which
+      * should indicate that there are no Red Books in the repository.
+      *
+      * The RBK04P01-responseCode404 also contains a dynamic array
+      * Data Area of authors Red Books, but for this operation this
+      * array is not set
+                 SET ADDRESS OF RBK02P01-responseCode404 TO WS-ELEMENT
+                 MOVE BAQ-RESP-STATUS-CODE TO WS-STATUS-CODE
+                 STRING OPERATION
+                  ' EXEC RESTful EP return HTTP Status Code '
+                  WS-STATUS-CODE
+                  ' MESSAGE ' Xmessage OF RBK02P01-responseCode404
+                      (1:Xmessage-length OF RBK02P01-responseCode404)
+                  DELIMITED BY SIZE
+                  INTO WS-DISPLAY-MSG
+
+                 PERFORM X-WRITE-DISPLAY-MSG
+              ELSE
+      * 404 was returned but there is no RedbookNotFound response body
+                 STRING OPERATION
+                   ' EXEC RESTful EP return HTTP Status Code '
+                   WS-STATUS-CODE
+                   ' NO Response Body'
+                   DELIMITED BY SIZE
+                   INTO WS-DISPLAY-MSG
+
+                 PERFORM X-WRITE-DISPLAY-MSG
+              END-IF
+           END-IF.
+
+       CD-040.
+      * Process the returned Redbook.
+           IF BAQ-RESP-STATUS-CODE = 200 THEN
+              IF responseCode200-existence OF BAQBASE-RBK02P01 > 0 THEN
+
+                 DISPLAY OPERATION ' Patched Red Book received'
+                 MOVE responseCode200-dataarea OF BAQBASE-RBK02P01 TO
+                     WS-DATA-AREA-NAME
+
+                 MOVE LENGTH OF RBK02P01-responseCode200 TO
+                    WS-ELEMENT-LENGTH
+
+                 PERFORM X-GET-DATA-AREA-ELEMENT
+
+      * BAQGETN has worked and returned the address of the Data Area
+      * that contains the RBK02P01-responseCode200 data structure.
+                 SET ADDRESS OF RBK02P01-responseCode200 TO WS-ELEMENT
+
+      * Check the fields have been updated by displaying the values
+                 STRING OPERATION ' URL is now '
+                   url2 OF RBK02P01-responseCode200
+                        (1:url2-length OF RBK02P01-responseCode200)
+                 DELIMITED BY SIZE
+                 INTO WS-DISPLAY-MSG
+                 DISPLAY WS-DISPLAY-MSG
+                 MOVE SPACES TO WS-DISPLAY-MSG
+
+                 STRING OPERATION ' contact is now '
+                   contact OF RBK02P01-responseCode200
+                        (1:contact-length OF RBK02P01-responseCode200)
+                 DELIMITED BY SIZE
+                 INTO WS-DISPLAY-MSG
+                 DISPLAY WS-DISPLAY-MSG
+                 MOVE SPACES TO WS-DISPLAY-MSG
+
+                 DISPLAY OPERATION ' Number of authors is '
+                       authors-num OF RBK02P01-responseCode200
+
+                 PERFORM VARYING WS-INDEX
+                    FROM 1 BY 1
+                    UNTIL WS-INDEX >
+                       authors-num OF RBK02P01-responseCode200
+
+                    MOVE authors-dataarea OF RBK02P01-responseCode200
+                        TO WS-DATA-AREA-NAME
+
+                    MOVE LENGTH OF RBK02P01-authors TO WS-ELEMENT-LENGTH
+
+                    PERFORM X-GET-DATA-AREA-ELEMENT
+
+                    IF WS-RC = FAILED THEN GO TO CD-999 END-IF
+
+      * We have fetched the Author from the Data Area so set the
+      * address of the 01 level data structure.
+                   SET ADDRESS OF RBK02P01-authors TO WS-ELEMENT
+
+                   IF WS-DEBUG = 1 THEN
+                      DISPLAY OPERATION '   Author ' WS-INDEX
+
+                    STRING OPERATION ' Author first name '
+                         firstName2 OF RBK02P01-authors
+                       (1:firstName2-length
+                               OF RBK02P01-authors)
+                    DELIMITED BY SIZE
+                    INTO WS-DISPLAY-MSG
+                    DISPLAY WS-DISPLAY-MSG
+                    MOVE SPACES TO WS-DISPLAY-MSG
+
+                    STRING OPERATION ' Author last name '
+                        lastName2 OF RBK02P01-authors
+                       (1:lastName2-length
+                               OF RBK02P01-authors)
+                    DELIMITED BY SIZE
+                    INTO WS-DISPLAY-MSG
+                    DISPLAY WS-DISPLAY-MSG
+                    MOVE SPACES TO WS-DISPLAY-MSG
+                   END-IF
+                 END-PERFORM
+
+                 DISPLAY OPERATION ' sizeMB-existence is '
+                           sizeMB-existence OF RBK02P01-responseCode200
+
+      *           DISPLAY OPERATION ' additional property is '
+      *               responseBody-json-property OF BAQBASE-RBK02Q01(1)
+              END-IF.
+
+       CD-999.
+           IF WS-DEBUG = 1 THEN
+              DISPLAY OPERATION ' CD-PATCH-REDBOOK Exit. WS-RC=' WS-RC.
+
+           EXIT.
+
+      *----------------------------------------------------------------*
+      * CE-MERGE-REDBOOK
+      *
+      * Operation mergeRedbook - RFC7396
+      *
+      * Sets the content of the BAQBASE-RBK03Q01 Request structure
+      * ready for the BAQEXEC Call. The call is then made to the
+      * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+      *
+      * Upon success, the BAQBASE-RBK03P01 structure is returned
+      * and dependent of the EP HTTP Status Code a DATA AREA element
+      * is got and processed.
+      *----------------------------------------------------------------*
+       CE-MERGE-REDBOOK SECTION.
+       CE-010.
+           IF WS-DEBUG = 1 THEN
+              DISPLAY OPERATION ' CE-MERGE-REDBOOK Entry.'.
+
+           INITIALIZE BAQBASE-RBK03Q01.
+
+      * Using the PATCH method in an API requests that a server object
+      * is updated by a Patch Document on a field by field basis rather
+      * then a complete replacement as would happen if using the PUT
+      * method.
+      *
+      * This procedure will invoke the mergeRedbook operation in the
+      * Redbook management API. Operation mergeRedbook uses media-type
+      * application/merge-patch+json which is defined by RFC 7396.
+      * This RFC (https://www.rfc-editor.org/rfc/rfc7396) defines
+      * the format of the patch document used to update the entity
+      * via the Rest API in a server.
+      *
+      * The patch document is constructed by z/OS Connect based on the
+      * settings made to the BAQBASE-RBK03Q01 request structure.
+      *
+      * Once z/OS Connect has constructed the patch document conforming
+      * to the requested media-type (RFC) from the binary COBOL
+      * structure this patch document is sent to the Rest API
+      * endpoint service. This is received at its path/Patch function
+      * and using appropriate function the patch document can be applied
+      * to an entity.  See method mergeRedbook in the Java class
+      * RedbookResource.java for a Java example that uses
+      * Jakarta JsonPatch classes to update a Java Redbook object.
+      *
+      * In this procedure we are going to set up a request that will
+      * produce a patch document that will perform a number of updates
+      * on a Redbook object. So for Redbook
+      * 'ABCs of IBM z/OS System Programming Volume 2' we are going
+      * to update the Redbook to represent a ficticious new version of
+      * the Redbook.
+      *
+      * 1. Update the URL of the Redbooks location.
+      * 2. Update the owning departments Contact.
+      * 3. Replace the Authors array.
+      * 4. Delete the size property as it is not used
+      * 5. Add a 'version' property dynamically and set it to 2.
+      *
+      * These updates show a selection of Patch goals and how we
+      * manipulate the operations Request structure to achieve these
+      * goals.
+      *
+      * Lets setup the Request structure BAQBASE-RBK03Q01 then
+      * make the call to z/OS Connect via the Host API verbs.
+
+      * 1. Update the URL of the redbook location
+      *
+      * Each property defined in the JSON Schema object when translated
+      * to COBOL has a field of the same (or similar) name with the
+      * suffix -patch-operation for a simple field or sub structure
+      * or -patch-item for an array structure.
+      *
+      * In these fields we set the operation that we want to perform
+      * on a particular field, if a -patch-operation field contains a
+      * space then no update is made to the property on the Rest API
+      * server.  See Patch product documentation for full details.
+      *
+      * Set the value 'U' for update to the url-patch-operation field
+      * and set the new data.
+           MOVE 'U' TO url-patch-operation OF BAQBASE-RBK03Q01.
+           MOVE 13 to url-length OF BAQBASE-RBK03Q01.
+           MOVE 'http://newurl' TO url OF BAQBASE-RBK03Q01.
+
+      * 2. Update the owning departments Contact.
+      *
+      * owningDepartment is a property of type object so this is an
+      * example of updating an object within an object.
+      *
+      * Set the value 'U' for update to the contact-patch-operation
+      * field and set the new data for contact.
+      *
+      * If we wanted to update the whole owningDepartment we could
+      * set 'U' in the field ngDepartment-patch-operation and then
+      * set the data in each field and the whole property object
+      * will update.
+      *
+      * Note the owningDepartment-patch-operation field has
+      * been truncated as the field name is too long to fit. To
+      * shorten the -patch-operation to -pchop set the Requester
+      * Gradle plugin option shortSuffix: yes. The field will then
+      * generate as owningDepartment-pchop.  See the product
+      * documentation for details on all the suffixes affected by
+      * this option.
+           MOVE 'U' TO contact-patch-operation OF BAQBASE-RBK03Q01.
+           MOVE 14 to contact-length OF BAQBASE-RBK03Q01.
+           MOVE 'A. Contact' TO contact OF BAQBASE-RBK03Q01.
+
+      * 3. Replace the Authors array
+      *
+      * With RFC 7396 the array manipulation capabilities are limited,
+      * the whole array property can be replaced or the whole array
+      * property can be deleted.
+      *
+      * Here we are going to supply new array content with a single
+      * author.
+      *
+      * In RFC 7396, like the non-array fields, the array has a
+      * correspond -patch-operation field, in this case
+      * authors-patch-operation.
+      *
+      * We set the authors-num field to 1 to state there is one array
+      * element in the replaced array content
+           MOVE 'U' TO authors-patch-operation OF BAQBASE-RBK03Q01.
+           MOVE 1 TO authors-num OF BAQBASE-RBK03Q01.
+           MOVE "AUTHOR-DATA-AREA" TO authors-dataarea
+                                   OF BAQBASE-RBK03Q01.
+
+           INITIALIZE RBK03Q01-authors.
+
+           MOVE 1 TO firstName-existence OF RBK03Q01-authors.
+           MOVE "New" TO firstName2 OF RBK03Q01-authors.
+           MOVE 3 TO firstName2-length OF RBK03Q01-authors.
+           MOVE 1 TO lastName-existence OF RBK03Q01-authors.
+           MOVE "Author" TO lastName2 OF RBK03Q01-authors.
+           MOVE 6 TO lastName2-length OF RBK03Q01-authors.
+
+           SET WS-ELEMENT TO ADDRESS OF RBK03Q01-authors.
+           MOVE LENGTH OF RBK03Q01-authors TO WS-ELEMENT-LENGTH.
+           MOVE authors-dataarea OF BAQBASE-RBK03Q01
+                                    TO WS-DATA-AREA-NAME.
+
+      * Now add the delete author element to the request Data Area
+           PERFORM X-PUT-DATA-AREA-ELEMENT.
+           IF WS-RC = FAILED THEN GO TO CE-999.
+
+      * 4. Delete the size property as it is not used
+      *
+      * To remove a property from an object we set its -patch-operation
+      * field to 'D' for delete.
+           MOVE 'D' TO sizeMB-patch-operation OF BAQBASE-RBK03Q01.
+
+      * 5. Add a 'version' property dynamically and set it to 2.
+      *
+      * To be able to add new properties dynamically to an existing
+      * object the objects schema must specify
+      * additionalProperties: true in the OpenApi operation RequestBody
+      * schema definition.
+      *
+      * This setting states the schema object can have extra properties
+      * that are not defined by the schema.  Typically these are stored
+      * in a Map or Dictionary defined in the Rest API server entity
+      * class.
+      *
+      * For PATCH the way we specify additional properties in COBOL is
+      * no different from a PUT or POST operation that supports
+      * additional properties, however the generated Patch document
+      * consumed by the Rest API is different.
+
+      * We have now specified a number of field updates in the
+      * BAQBASE-RBK03Q01 Request structure we can now make the call to
+      * z/OS Connect via the Host API verbs to process the structure
+      * and call the endpoint Rest API with a Patch document which will
+      * be processed by the API.
+      *
+      * Here we have chosen to group a number of updates together and
+      * process in one call, if desired, each update could be done
+      * individually by setting the BAQBASE-RBK03Q01 fields then calling
+      * BAQEXEC to call z/OS Connect, then initialize the
+      * BAQBASE-RBK03Q01 structure again, update as appropriate and
+      * call BAQEXEC again.
+           SET BAQ-REQ-BASE-ADDRESS TO ADDRESS OF BAQBASE-RBK03Q01.
+           MOVE LENGTH OF BAQBASE-RBK03Q01 TO BAQ-REQ-BASE-LENGTH.
+
+           MOVE 'ABCs of IBM zOS System Programming Volume 2'
+                   TO Xtitle OF BAQBASE-RBK03Q01.
+           MOVE 44 to Xtitle-length OF BAQBASE-RBK03Q01.
+
+       CE-020.
+      * Call the API
+      * Passing the address of the API-INFO structure required for the
+      * BAQEXEC call. Section X-EXEC is a reusable routine that is
+      * used for all API calls.
+           SET WS-API-INFO TO ADDRESS OF BAQ-API-INFO-RBK03I01.
+           PERFORM X-EXEC.
+
+      * Check that the call was successful, if not exit the section
+      * Routine X-EXEC has displayed the error responses
+           IF BAQ-ERROR THEN
+              DISPLAY OPERATION ' CE-MERGE-REDBOOK BAQEXEC problem'
+              DISPLAY BAQ-ZCON-RETURN-MESSAGE
+                       (1:BAQ-ZCON-RETURN-MESSAGE-LEN)
+              MOVE FAILED TO WS-RC
+              GO TO CA-999
+           END-IF.
+
+           IF BAQ-WARNING THEN
+              DISPLAY OPERATION ' CE-MERGE-REDBOOK BAQEXEC problem'
+              DISPLAY BAQ-RESP-STATUS-MESSAGE
+                       (1:BAQ-RESP-STATUS-MESSAGE-LEN)
+              MOVE FAILED TO WS-RC
+              GO TO CA-999
+           END-IF.
+
+       CE-030.
+      * The BAQHAPI has successfully called remote endpoint API and that
+      * API has returned a HTTP status code that was defined in the
+      * Open API document for the called operation.  This could be an
+      * error HTTP status code, but as long as it is defined in the OAS
+      * document then BAQHAPI sees this as a successful call so now we
+      * must address the returned base structure and interrogate the
+      * returned responses in more detail
+      *
+      * The address of the returned BAQBASE structure is returned in
+      * the BAQ-RESPONSE-AREA so set the structure to that address
+           SET ADDRESS OF BAQBASE-RBK03P01 to BAQ-RESP-BASE-ADDRESS.
+
+      * For this operation the OAS document defines two responses
+      * 200-OK and 404-NOTFOUND, if the remote endpoint application
+      * returns any other HTTP status code then a status of BAQ-WARNING
+      * is returned and the endpoint response is returned in
+      * BAQ-RESP-STATUS-MESSAGE, first 1024 characters.
+      *
+      * If we have reached here we know the remote endpoint status code
+      * is either 404-NOTFOUND or 200-OK. Depending on the status code
+      * this determines which Data Area has been returned. See
+      * z/OS connect documentation for details on what a Data Area is.
+      * In short it is an area of memory that is described by a
+      * generated 01 level data structure, it is dynamic in length and
+      * used to reference the returned data on a per HTTP status code
+      * bases and also for referencing dynamic length arrays.
+
+      * Check the remote endpoint HTTP status code and check that a
+      * response was received, lets do the NOTFOUND case first.
+           IF BAQ-RESP-STATUS-CODE EQUAL 404 THEN
+              IF responseCode404-existence OF BAQBASE-RBK03P01 > 0 THEN
+
+      * The Redbook API provided a RedbookNotFound response body
+      * in a Data Area, the name of that Data Area is located in
+      * responseCode404-dataarea in the BAQBASE data structure.
+      * Set this name in to WS-DATA-AREA-NAME and use the common
+      * routines X-GET-DATA-AREA-ELEMENT and set the expected length
+      * of the returned data in WS-ELEMENT-LENGTH.
+                 MOVE responseCode404-dataarea OF BAQBASE-RBK03P01 TO
+                     WS-DATA-AREA-NAME
+
+                 MOVE LENGTH OF RBK03P01-responseCode404 TO
+                    WS-ELEMENT-LENGTH
+
+                 PERFORM X-GET-DATA-AREA-ELEMENT
+
+      * If WS-RC is failed the BAQGETN call failed
+                 IF WS-RC = FAILED THEN EXIT
+
+      * BAQGETN has worked and returned the address of the Data Area
+      * that contains the RBK04P01-responseCode404 data structure.
+      * Lets address that and display the returned message which
+      * should indicate that there are no Red Books in the repository.
+      *
+      * The RBK04P01-responseCode404 also contains a dynamic array
+      * Data Area of authors Red Books, but for this operation this
+      * array is not set
+                 SET ADDRESS OF RBK03P01-responseCode404 TO WS-ELEMENT
+                 MOVE BAQ-RESP-STATUS-CODE TO WS-STATUS-CODE
+                 STRING OPERATION
+                  ' EXEC RESTful EP return HTTP Status Code '
+                  WS-STATUS-CODE
+                  ' MESSAGE ' Xmessage OF RBK03P01-responseCode404
+                      (1:Xmessage-length OF RBK03P01-responseCode404)
+                  DELIMITED BY SIZE
+                  INTO WS-DISPLAY-MSG
+
+                 PERFORM X-WRITE-DISPLAY-MSG
+              ELSE
+      * 404 was returned but there is no RedbookNotFound response body
+                 STRING OPERATION
+                   ' EXEC RESTful EP return HTTP Status Code '
+                   WS-STATUS-CODE
+                   ' NO Response Body'
+                   DELIMITED BY SIZE
+                   INTO WS-DISPLAY-MSG
+
+                 PERFORM X-WRITE-DISPLAY-MSG
+              END-IF
+           END-IF.
+
+       CE-040.
+      * Process the returned Redbook.
+           IF BAQ-RESP-STATUS-CODE = 200 THEN
+              IF responseCode200-existence OF BAQBASE-RBK03P01 > 0 THEN
+
+                 DISPLAY OPERATION ' Merged Red Book received'
+                 MOVE responseCode200-dataarea OF BAQBASE-RBK03P01 TO
+                     WS-DATA-AREA-NAME
+
+                 MOVE LENGTH OF RBK03P01-responseCode200 TO
+                    WS-ELEMENT-LENGTH
+
+                 PERFORM X-GET-DATA-AREA-ELEMENT
+
+      * BAQGETN has worked and returned the address of the Data Area
+      * that contains the RBK03P01-responseCode200 data structure.
+                 SET ADDRESS OF RBK03P01-responseCode200 TO WS-ELEMENT
+
+      * Check the fields have been updated by displaying the values
+                 STRING OPERATION ' URL is now '
+                   url2 OF RBK03P01-responseCode200
+                        (1:url2-length OF RBK03P01-responseCode200)
+                 DELIMITED BY SIZE
+                 INTO WS-DISPLAY-MSG
+                 DISPLAY WS-DISPLAY-MSG
+                 MOVE SPACES TO WS-DISPLAY-MSG
+
+                 STRING OPERATION ' contact is now '
+                   contact OF RBK03P01-responseCode200
+                        (1:contact-length OF RBK03P01-responseCode200)
+                 DELIMITED BY SIZE
+                 INTO WS-DISPLAY-MSG
+                 DISPLAY WS-DISPLAY-MSG
+                 MOVE SPACES TO WS-DISPLAY-MSG
+
+                 DISPLAY OPERATION ' Number of authors is '
+                       authors-num OF RBK03P01-responseCode200
+
+                 PERFORM VARYING WS-INDEX
+                    FROM 1 BY 1
+                    UNTIL WS-INDEX >
+                       authors-num OF RBK03P01-responseCode200
+
+                    MOVE authors-dataarea OF RBK03P01-responseCode200
+                        TO WS-DATA-AREA-NAME
+
+                    MOVE LENGTH OF RBK03P01-authors TO WS-ELEMENT-LENGTH
+
+                    PERFORM X-GET-DATA-AREA-ELEMENT
+
+                    IF WS-RC = FAILED THEN GO TO CE-999 END-IF
+
+      * We have fetched the Author from the Data Area so set the
+      * address of the 01 level data structure.
+                   SET ADDRESS OF RBK03P01-authors TO WS-ELEMENT
+
+                   IF WS-DEBUG = 1 THEN
+                      DISPLAY OPERATION '   Author ' WS-INDEX
+
+                    STRING OPERATION ' Author first name '
+                         firstName2 OF RBK03P01-authors
+                       (1:firstName2-length
+                               OF RBK03P01-authors)
+                    DELIMITED BY SIZE
+                    INTO WS-DISPLAY-MSG
+                    DISPLAY WS-DISPLAY-MSG
+                    MOVE SPACES TO WS-DISPLAY-MSG
+
+                    STRING OPERATION ' Author last name '
+                        lastName2 OF RBK03P01-authors
+                       (1:lastName2-length
+                               OF RBK03P01-authors)
+                    DELIMITED BY SIZE
+                    INTO WS-DISPLAY-MSG
+                    DISPLAY WS-DISPLAY-MSG
+                    MOVE SPACES TO WS-DISPLAY-MSG
+                   END-IF
+                 END-PERFORM
+
+                 DISPLAY OPERATION ' sizeMB-existence is '
+                           sizeMB-existence OF RBK03P01-responseCode200
+
+      *           DISPLAY OPERATION ' additional property is '
+      *               responseBody-json-property OF BAQBASE-RBK03Q01(1)
+              END-IF.
+
+       CE-999.
+           IF WS-DEBUG = 1 THEN
+              DISPLAY OPERATION ' CD-MERGE-REDBOOK Exit. WS-RC=' WS-RC.
 
            EXIT.
 
