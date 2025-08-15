@@ -1,12 +1,12 @@
 /*
  * Copyright IBM Corp. 2023
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,7 +28,7 @@ public class Redbook {
 
     private String title;
 
-    private List<String> authors = new ArrayList<>();
+    private List<Author> authors = new ArrayList<>();
 
     private String formNumber;
 
@@ -44,13 +44,16 @@ public class Redbook {
 
     private URL url;
 
+    private OwningDepartment owningDepartment;
+
     public Redbook(){}
 
-    public Redbook(String title, List<String> authors, String formNumber, String type) {
+    public Redbook(String title, List<Author> authors, String formNumber, String type, OwningDepartment dept) {
         this.title = title;
         this.authors = authors;
         this.formNumber = formNumber;
         this.documentType = DocumentType.valueOf(type);
+        this.owningDepartment = dept;
     }
 
     public String getTitle() {
@@ -61,11 +64,11 @@ public class Redbook {
         this.title = title;
     }
 
-    public List<String> getAuthors() {
+    public List<Author> getAuthors() {
         return authors;
     }
 
-    public void setAuthors(List<String> authors) {
+    public void setAuthors(List<Author> authors) {
         this.authors = authors;
     }
 
@@ -122,6 +125,14 @@ public class Redbook {
 
     public void setDocumentType(DocumentType documentType) {
         this.documentType = documentType;
+    }
+
+    public OwningDepartment getOwningDepartment() {
+        return owningDepartment;
+    }
+
+    public void setOwningDepartment(OwningDepartment owningDepartment) {
+        this.owningDepartment = owningDepartment;
     }
 
     @Override

@@ -31,6 +31,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.ibm.zosconnect.redbook.model.Author;
+import com.ibm.zosconnect.redbook.model.OwningDepartment;
 import com.ibm.zosconnect.redbook.model.Redbook;
 import com.ibm.zosconnect.redbook.model.RedbookNotFound;
 
@@ -42,8 +44,8 @@ public class RedbooksResource {
      */
     public RedbooksResource() {
         for (Redbook redbook : redbooks.values()) {
-            List<String> authors = redbook.getAuthors();
-            for (String author: authors) {
+            List<Author> authors = redbook.getAuthors();
+            for (Author author: authors) {
                 if (authorsBooks.containsKey(author)) {
                     Set<Redbook> books = authorsBooks.get(author);
                     books.add(redbook);
@@ -69,7 +71,7 @@ public class RedbooksResource {
      * Gets the inventory of all Redbooks written by a particular author
      * @return
      */
-    public static Set<Redbook> getInventory(String author) {
+    public static Set<Redbook> getInventory(Author author) {
         return authorsBooks.get(author);
     }
 
@@ -106,47 +108,51 @@ public class RedbooksResource {
 
     private static Map<String, Redbook> redbooks = new LinkedHashMap<>();
     {
-        List<String> authors = new ArrayList<>();
-        authors.add("Lydia Parziale");
-        authors.add("Luiz Fadel");
-        authors.add("Stanley Jon");
-        Redbook redbook = new Redbook("ABCs of IBM z/OS System Programming Volume 1", authors, "SG24-6981-04", "PDF");
+        List<Author> authors = new ArrayList<>();
+        authors.add(new Author("Lydia", "Parziale"));
+        authors.add(new Author("Luiz", "Fadel"));
+        authors.add(new Author("Stanley", "Jon"));
+        OwningDepartment dept = new OwningDepartment("1", "zOS", "A Manager");
+        Redbook redbook = new Redbook("ABCs of IBM zOS System Programming Volume 1", authors, "SG24-6981-04", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2018, 1 - 1, 22).getTime());
         redbook.setSizeMB(4.1);
         redbook.setStatus(Redbook.Status.PUBLISHED);
         redbook.setUrl("https://www.redbooks.ibm.com/redbooks/pdfs/sg246981.pdf");
-        redbooks.put("ABCs of IBM z/OS System Programming Volume 1", redbook);
+        redbooks.put("ABCs of IBM zOS System Programming Volume 1", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Lydia Parziale");
-        authors.add("Guillermo Cosimo");
-        authors.add("Lutz Kuehner");
-        redbook = new Redbook("ABCs of IBM z/OS System Programming Volume 2", authors, "SG24-6982-04", "PDF");
+        authors.add(new Author("Lydia", "Parziale"));
+        authors.add(new Author("Guillermo", "Cosimo"));
+        authors.add(new Author("Lutz", "Kuehner"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("ABCs of IBM zOS System Programming Volume 2", authors, "SG24-6982-04", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2018, 4 - 1, 7).getTime());
         redbook.setSizeMB(3.2);
         redbook.setStatus(Redbook.Status.PUBLISHED);
         redbook.setUrl("https://www.redbooks.ibm.com/redbooks/pdfs/sg246982.pdf");
-        redbooks.put("ABCs of IBM z/OS System Programming Volume 2", redbook);
+        redbooks.put("ABCs of IBM zOS System Programming Volume 2", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Jose Gilberto Biondo Jr");
-        redbook = new Redbook("ABCs of IBM z/OS System Programming Volume 3", authors, "SG24-6983-04", "PDF");
+        authors.add(new Author("Jose Gilberto", "Biondo Jr"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("ABCs of IBM zOS System Programming Volume 3", authors, "SG24-6983-04", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2018, 1 - 1, 19).getTime());
         redbook.setSizeMB(2.8);
         redbook.setStatus(Redbook.Status.PUBLISHED);
         redbook.setUrl("https://www.redbooks.ibm.com/redbooks/pdfs/sg246983.pdf");
-        redbooks.put("ABCs of IBM z/OS System Programming Volume 3", redbook);
+        redbooks.put("ABCs of IBM zOS System Programming Volume 3", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Makenzie Mannaksu");
-        authors.add("Diego Cardalliaguet");
-        authors.add("Mehmet Cuneyt Goksu");
-        authors.add("Alex Osadchyy");
-        authors.add("Lih M Wang");
-        authors.add("Sherry Yu");
-        authors.add("Poonam Zham");
-        authors.add("Erica Ross");
-        redbook = new Redbook("What AI Can Do for You: Use Cases for AI on IBM Z", authors, "REDP-5679-00", "PDF");
+        authors.add(new Author("Makenzie", "Mannaksu"));
+        authors.add(new Author("Diego", "Cardalliaguet"));
+        authors.add(new Author("Mehmet", "Cuneyt-Goksu"));
+        authors.add(new Author("Alex", "Osadchyy"));
+        authors.add(new Author("Lih-M", "Wang"));
+        authors.add(new Author("Sherry", "Yu"));
+        authors.add(new Author("Poonam", "Zham"));
+        authors.add(new Author("Erica", "Ross"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("What AI Can Do for You: Use Cases for AI on IBM Z", authors, "REDP-5679-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2022, 8 - 1, 2).getTime());
         redbook.setSizeMB(9.3);
         redbook.setStatus(Redbook.Status.PUBLISHED);
@@ -154,21 +160,22 @@ public class RedbooksResource {
         redbooks.put("What AI Can Do for You: Use Cases for AI on IBM Z", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Bill White");
-        authors.add("Matthias Bangert");
-        authors.add("Cyril Armand");
-        authors.add("Roger Bales");
-        authors.add("Diego Bessone");
-        authors.add("Anthony Ciabattoni");
-        authors.add("Michael Frankenberg");
-        authors.add("Debra Hallen");
-        authors.add("DeWayne Hughes");
-        authors.add("Vinod Kanwal");
-        authors.add("Karen Smolar");
-        authors.add("Jean-Marc Vandon");
-        authors.add("Paolo Vitali");
-        authors.add("Knud Vraa");
-        redbook = new Redbook("Getting Started with IBM Z Cyber Vault", authors, "SG24-8511-00", "PDF");
+        authors.add(new Author("Bill", "White"));
+        authors.add(new Author("Matthias", "Bangert"));
+        authors.add(new Author("Cyril", "Armand"));
+        authors.add(new Author("Roger", "Bales"));
+        authors.add(new Author("Diego", "Bessone"));
+        authors.add(new Author("Anthony", "Ciabattoni"));
+        authors.add(new Author("Michael", "Frankenberg"));
+        authors.add(new Author("Debra", "Hallen"));
+        authors.add(new Author("DeWayne", "Hughes"));
+        authors.add(new Author("Vinod", "Kanwal"));
+        authors.add(new Author("Karen", "Smolar"));
+        authors.add(new Author("Jean-Marc", "Vandon"));
+        authors.add(new Author("Paolo", "Vitali"));
+        authors.add(new Author("Knud", "Vraa"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("Getting Started with IBM Z Cyber Vault", authors, "SG24-8511-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2021, 11 - 1, 18).getTime());
         redbook.setSizeMB(5.3);
         redbook.setStatus(Redbook.Status.PUBLISHED);
@@ -176,12 +183,13 @@ public class RedbooksResource {
         redbooks.put("Getting Started with IBM Z Cyber Vault", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Makenzie Manna");
-        authors.add("Ravinder Akula");
-        authors.add("Matthew Cousens");
-        authors.add("Pabitra Mukhopadhyay");
-        authors.add("Anand Shukla");
-        redbook = new Redbook("Getting Started: Journey to Modernization with IBM Z", authors, "REDP-5627-00", "PDF");
+        authors.add(new Author("Makenzie", "Manna"));
+        authors.add(new Author("Ravinder", "Akula"));
+        authors.add(new Author("Matthew", "Cousens"));
+        authors.add(new Author("Pabitra", "Mukhopadhyay"));
+        authors.add(new Author("Anand", "Shukla"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("Getting Started: Journey to Modernization with IBM Z", authors, "REDP-5627-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2021, 3 - 1, 15).getTime());
         redbook.setSizeMB(5.6);
         redbook.setStatus(Redbook.Status.PUBLISHED);
@@ -189,13 +197,14 @@ public class RedbooksResource {
         redbooks.put("Getting Started: Journey to Modernization with IBM Z", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Phil Wakelin");
-        authors.add("Carlos Donatucci");
-        authors.add("Jonathan Lawrence");
-        authors.add("Mitch Johnson");
-        authors.add("Michael Jones");
-        authors.add("Tito Paiva");
-        redbook = new Redbook("Liberty in IBM CICS: Deploying and Managing Java EE Applications", authors, "SG24-8418-00", "PDF");
+        authors.add(new Author("Phil", "Wakelin"));
+        authors.add(new Author("Carlos", "Donatucci"));
+        authors.add(new Author("Jonathan", "Lawrence"));
+        authors.add(new Author("Mitch", "Johnson"));
+        authors.add(new Author("Michael", "Jones"));
+        authors.add(new Author("Tito", "Paiva"));
+        dept = new OwningDepartment("2", "CICS", "A Manager");
+        redbook = new Redbook("Liberty in IBM CICS: Deploying and Managing Java EE Applications", authors, "SG24-8418-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2018, 3 - 1, 29).getTime());
         redbook.setSizeMB(11.1);
         redbook.setStatus(Redbook.Status.PUBLISHED);
@@ -203,20 +212,22 @@ public class RedbooksResource {
         redbooks.put("Liberty in IBM CICS: Deploying and Managing Java EE Applications", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Chris Crone");
-        redbook = new Redbook("Exploring IBM Db2 for z/OS Continuous Delivery", authors, "REDP-5469-00", "PDF");
+        authors.add(new Author("Chris", "Crone"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("Exploring IBM Db2 for zOS Continuous Delivery", authors, "REDP-5469-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2018, 3 - 1, 21).getTime());
         redbook.setSizeMB(2.8);
         redbook.setStatus(Redbook.Status.PUBLISHED);
         redbook.setUrl("https://www.redbooks.ibm.com/redpapers/pdfs/redp5469.pdf");
-        redbooks.put("Exploring IBM Db2 for z/OS Continuous Delivery", redbook);
+        redbooks.put("Exploring IBM Db2 for zOS Continuous Delivery", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Arndt Eade");
-        authors.add("Randy Frerking");
-        authors.add("Rich Jacksons");
-        authors.add("Kellie Mathis");
-        redbook = new Redbook("IBM CICS and the Coupling Facility: Beyond the Basics", authors, "SG24-8420-00", "PDF");
+        authors.add(new Author("Arndt", "Eade"));
+        authors.add(new Author("Randy", "Frerking"));
+        authors.add(new Author("Rich", "Jacksons"));
+        authors.add(new Author("Kellie", "Mathis"));
+        dept = new OwningDepartment("2", "CICS", "A Manager");
+        redbook = new Redbook("IBM CICS and the Coupling Facility: Beyond the Basics", authors, "SG24-8420-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2018, 2 - 1, 21).getTime());
         redbook.setSizeMB(4.6);
         redbook.setStatus(Redbook.Status.PUBLISHED);
@@ -224,16 +235,17 @@ public class RedbooksResource {
         redbooks.put("IBM CICS and the Coupling Facility: Beyond the Basics", redbook);
 
         authors = new ArrayList<>();
-        authors.add("Keith Winnard");
-        authors.add("Wai Choi");
-        authors.add("Martina vondem Bussche");
-        redbook = new Redbook("z/OS PKI Services: Quick Set-up for Multiple CAs", authors, "SG24-8337-00", "PDF");
+        authors.add(new Author("Keith", "Winnard"));
+        authors.add(new Author("Wai", "Choi"));
+        authors.add(new Author("Martina", "vondem-Bussche"));
+        dept = new OwningDepartment("1", "zOS", "A Manager");
+        redbook = new Redbook("zOS PKI Services: Quick Set-up for Multiple CAs", authors, "SG24-8337-00", "PDF", dept);
         redbook.setPublicationDate(new GregorianCalendar(2017, 1 - 1, 20).getTime());
         redbook.setSizeMB(3.3);
         redbook.setStatus(Redbook.Status.PUBLISHED);
         redbook.setUrl("https://www.redbooks.ibm.com/redbooks/pdfs/sg248337.pdf");
-        redbooks.put("z/OS PKI Services: Quick Set-up for Multiple CAs", redbook);
+        redbooks.put("zOS PKI Services: Quick Set-up for Multiple CAs", redbook);
     }
 
-    private static Map<String, Set<Redbook>> authorsBooks = new HashMap<>();
+    private static Map<Author, Set<Redbook>> authorsBooks = new HashMap<>();
 }

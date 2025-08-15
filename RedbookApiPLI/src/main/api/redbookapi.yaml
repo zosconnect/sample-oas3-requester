@@ -15,7 +15,7 @@ paths:
       parameters:
         - name: title
           in: path
-          description: The required book title
+          description: The required Redbook title
           required: true
           schema:
             type: string
@@ -34,7 +34,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Redbook'
         '404':
-          description: No Redbook
+          description: No Redbook of the title exists
           content:
             application/json:
               schema:
@@ -46,13 +46,13 @@ paths:
               schema:
                 type: string
     post:
-      summary: Add details of a redbook
-      description: Create a redbook entry
+      summary: Create a Redbook entry
+      description: Supplies a new Redbook which is stored in the Redbook inventory
       operationId: createRedbook
       parameters:
         - name: title
           in: path
-          description: The required book title
+          description: The required Redbook title
           required: true
           schema:
             type: string
@@ -75,6 +75,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Redbook'
+    patch:
+      summary: Patch Update an existing Redbook
+      description: 'Update a Redbook entry via a Patch Document using RFC 6902'
+      operationId: patchRedbook
+      parameters:
+        - name: title
+          in: path
+          description: The required Redbook title
+          required: true
+          schema:
+            type: string
+            maxLength: 80
+      requestBody:
+        content:
+          application/json-patch+json:
+            # Note the Schema is not used for RFC6902 (application/json-patch+json) media type
+            # The data format is always a fixed format. See RFC6902.
+            schema:
+              $ref: '#/components/schemas/None'
+      responses:
+        '200':
+          description: A Redbook is patch updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redbook'
+        '404':
+          description: No Redbook of the title exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedbookNotFound'
+  '/redbook/m/{title}':
+    summary: Redbook Management Supplemental API
+    description: An example of a RFC 7396 Merge Patch operation
+    patch:
+      summary: Patch Update an existing Redbook
+      description: 'Update a Redbook entry via a Patch Document using RFC 7396'
+      operationId: mergeRedbook
+      parameters:
+        - name: title
+          in: path
+          description: The required Redbook title
+          required: true
+          schema:
+            type: string
+            maxLength: 80
+      requestBody:
+        content:
+          # RFC7396
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Redbook'
+      responses:
+        '200':
+          description: A Redbook is merge patch updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redbook'
+        '404':
+          description: No Redbook of the title exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedbookNotFound'
   /redbooks:
     summary: Redbook bulk operations
     description: Bulk operations
@@ -120,8 +186,14 @@ components:
             type: array
             maxItems: 20
             items:
-              type: string
-              maxLength: 40
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  maxLength: 40
+                lastName:
+                  type: string
+                  maxLength: 40
         status:
           type: string
           enum: [ DRAFT, PUBLISHED ]
@@ -142,6 +214,23 @@ components:
         url:
           type: string
           maxLength: 100
+        owningDepartment:
+          type: object
+          required:
+            - id
+            - name
+            - contact
+          properties: 
+            id:
+              type: string
+              minLength: 5
+              maxLength: 5
+            name:
+              type: string
+              maxLength: 40
+            contact:
+              type: string
+              maxLength: 40
     Redbooks:
       type: array
       items:
@@ -157,3 +246,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Redbook'
+    None:
+      type: object
+      required:
+        - none
+      properties:
+        none:
+          type: string
+          maxLength: 1
