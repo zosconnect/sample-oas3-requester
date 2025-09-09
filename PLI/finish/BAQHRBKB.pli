@@ -1267,14 +1267,6 @@
           GO TO cd_999;
        END;
 
-       IF baq_rc = BAQ_ERROR THEN DO;
-          DISPLAY(operation || ' cd_patch_redbook BAQEXEC problem');
-          DISPLAY(SUBSTR(BAQ_RESP_STATUS_MESSAGE,
-                         1, BAQ_RESP_STATUS_MESSAGE_LEN));
-          rc = FAILED;
-          GO TO cd_999;
-       END;
-
        /*
         * The BAQHAPI has successfully called remote endpoint API and
         * that API has returned a HTTP status code that was defined in
