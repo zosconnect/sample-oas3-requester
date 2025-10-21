@@ -1,11 +1,11 @@
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       * This file contains the generated language structure(s) for
-      *  request JSON schema 'patchRedbook_request.json'.
+      *  request JSON schema 'mergeRedbook_request.json'.
       * This structure was generated using 'DFHJS2LS' at mapping level
       *  '5.0'.
       * 
       *  
-      *   01 BAQBASE-RBK02Q01.
+      *   01 BAQBASE-RBK03Q01.
       *     03 requestPathParameters.
       * 
       * Comments for field 'Xtitle':
@@ -50,35 +50,18 @@
       *       06 Xtitle2-length                PIC S9999 COMP-5 SYNC.
       *       06 Xtitle2                       PIC X(80).
       * 
-      * Comments for field 'authors-patch-item':
-      * This field is used to denote which JSON items are to be
-      *  updated during an HTTP PATCH operation. The following array
-      *  will contain the array element data used to update the JSON
-      *  array items.
-      * The value of the field is a list of array items to update
-      *  indexed from 1.  If a new array item is to be created in the
-      *  array, the '+' symbol is used to denote this and must appear
-      *  last in the list. When a new array item is created the patch
-      *  operation field is ignored. All data fields are used to
-      *  create a new JSON array item.
-      * Examples are '4', '1,4,5', '3,5-7', '3-5,+'.  The value
-      *  'DELETE' denotes the whole JSON property of type array is to
-      *  be deleted.  The value 'REPLACE' denotes the whole JSON
-      *  property of type array is to be replaced.
-      * A spaces value means no update to be made to the JSON array.
-      * The arrays '-num' field will contain the number of items in
-      *  the array. A correlation exists between the patch item field
-      *  and '-num'. For example, i.e. if the patch item is '3,5-7',
-      *  then '-num' must be '4'. Each array element matches the
-      *  sequence listed in the path item field.
+      * Comments for field 'authors-patch-operation':
+      * This field is used to control how the following field is used
+      *  to update a JSON property during an HTTP PATCH operation. 
+      *  See the first patch operation field for a description of use.
       * JSON schema type: 'string'.
-      * JSON schema keyword 'minLength' value: '50'.
-      * JSON schema keyword 'maxLength' value: '50'.
-      *       06 authors-patch-item            PIC X(50).
+      * JSON schema keyword 'minLength' value: '1'.
+      * JSON schema keyword 'maxLength' value: '1'.
+      *       06 authors-patch-operation       PIC X(1).
       * 
       *  
       * Data area 'authors-dataarea' contains 'authors-num' instances
-      *  of structure 'RBK02Q01-authors', each of which represents an
+      *  of structure 'RBK03Q01-authors', each of which represents an
       *  instance of JSON schema keyword 'requestBody->authors'. The
       *  Data area must be read from and written to in BIT mode.
       * There should be at least '0' instance(s).
@@ -267,19 +250,19 @@
       *  
       * This structure describes one instance of the data in Data Area
       *  'authors-dataarea'.
-      *  01 RBK02Q01-authors.
+      *  01 RBK03Q01-authors.
       *    03 authors.
       * 
-      * Comments for field 'firstName-patch-operation':
-      * This field is used to control how the following field is used
-      *  to update a JSON property during an HTTP PATCH operation. 
-      *  See the first patch operation field for a description of use.
-      * JSON schema type: 'string'.
-      * JSON schema keyword 'minLength' value: '1'.
-      * JSON schema keyword 'maxLength' value: '1'.
-      *      06 firstName-patch-operation     PIC X(1).
+      *  
+      * JSON schema keyword 'requestBody->authors->firstName' is
+      *  optional. The existence of the field is indicated by field
+      *  'firstName-existence'.
+      *      06 firstName-existence           PIC S9(9) COMP-5 SYNC.
       * 
-      * Comments for field 'firstName':
+      *  
+      *      06 firstName.
+      * 
+      * Comments for field 'firstName2':
       * This field represents the value of JSON schema keyword
       *  'requestBody->authors->firstName'.
       * JSON schema type: 'string'.
@@ -287,19 +270,19 @@
       * JSON schema keyword 'maxLength' value: '40'.
       * This field contains a varying length array of characters or
       *  binary data.
-      *      06 firstName-length              PIC S9999 COMP-5 SYNC.
-      *      06 firstName                     PIC X(40).
+      *        09 firstName2-length             PIC S9999 COMP-5 SYNC.
+      *        09 firstName2                    PIC X(40).
       * 
-      * Comments for field 'lastName-patch-operation':
-      * This field is used to control how the following field is used
-      *  to update a JSON property during an HTTP PATCH operation. 
-      *  See the first patch operation field for a description of use.
-      * JSON schema type: 'string'.
-      * JSON schema keyword 'minLength' value: '1'.
-      * JSON schema keyword 'maxLength' value: '1'.
-      *      06 lastName-patch-operation      PIC X(1).
+      *  
+      * JSON schema keyword 'requestBody->authors->lastName' is
+      *  optional. The existence of the field is indicated by field
+      *  'lastName-existence'.
+      *      06 lastName-existence            PIC S9(9) COMP-5 SYNC.
       * 
-      * Comments for field 'lastName':
+      *  
+      *      06 lastName.
+      * 
+      * Comments for field 'lastName2':
       * This field represents the value of JSON schema keyword
       *  'requestBody->authors->lastName'.
       * JSON schema type: 'string'.
@@ -307,13 +290,19 @@
       * JSON schema keyword 'maxLength' value: '40'.
       * This field contains a varying length array of characters or
       *  binary data.
-      *      06 lastName-length               PIC S9999 COMP-5 SYNC.
-      *      06 lastName                      PIC X(40).
+      *        09 lastName2-length              PIC S9999 COMP-5 SYNC.
+      *        09 lastName2                     PIC X(40).
+      * 
+      * Comments for field 'filler':
+      * This is a filler entry to ensure the correct padding for a
+      *  structure. These slack bytes do not contain any application
+      *  data.
+      *      06 filler                        PIC X(2).
       * 
       *  
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  
-          01 BAQBASE-RBK02Q01.
+          01 BAQBASE-RBK03Q01.
             03 requestPathParameters.
               06 Xtitle-length                 PIC S9999 COMP-5 SYNC.
               06 Xtitle                        PIC X(80).
@@ -321,7 +310,7 @@
               06 title-patch-operation         PIC X(1).
               06 Xtitle2-length                PIC S9999 COMP-5 SYNC.
               06 Xtitle2                       PIC X(80).
-              06 authors-patch-item            PIC X(50).
+              06 authors-patch-operation       PIC X(1).
  
               06 authors-num                   PIC S9(9) COMP-5 SYNC.
               06 authors-dataarea              PIC X(16).
@@ -353,12 +342,19 @@
                 09 contact-length                PIC S9999 COMP-5 SYNC.
                 09 contact                       PIC X(40).
  
-         01 RBK02Q01-authors.
+         01 RBK03Q01-authors.
            03 authors.
-             06 firstName-patch-operation     PIC X(1).
-             06 firstName-length              PIC S9999 COMP-5 SYNC.
-             06 firstName                     PIC X(40).
-             06 lastName-patch-operation      PIC X(1).
-             06 lastName-length               PIC S9999 COMP-5 SYNC.
-             06 lastName                      PIC X(40).
+ 
+             06 firstName-existence           PIC S9(9) COMP-5 SYNC.
+ 
+             06 firstName.
+               09 firstName2-length             PIC S9999 COMP-5 SYNC.
+               09 firstName2                    PIC X(40).
+ 
+             06 lastName-existence            PIC S9(9) COMP-5 SYNC.
+ 
+             06 lastName.
+               09 lastName2-length              PIC S9999 COMP-5 SYNC.
+               09 lastName2                     PIC X(40).
+             06 filler                        PIC X(2).
  

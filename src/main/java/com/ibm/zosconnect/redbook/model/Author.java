@@ -1,12 +1,12 @@
 /*
- * Copyright IBM Corp. 2023
+ * Copyright IBM Corp. 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,40 +19,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A model class to represent an error where a requested IBM Redbook cannot be found
+ * A model class to represent an error where a requested IBM Red Book cannot be found
  */
-public class RedbookNotFound {
+public class Author {
 
-    private String message;
+    private String firstName;
+    private String lastName;
 
-    private List<Redbook> authorsWorks = new ArrayList<>();
+    public Author () {
 
-    public RedbookNotFound () {
-        
     }
 
-    public RedbookNotFound(String message) {
-        this.message = message;
+    public Author(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
-    public String getMessage() {
-        return message;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public List<Redbook> getAuthorsWorks() {
-        return authorsWorks;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setAuthorsWorks(List<Redbook> authorsWorks) {
-        this.authorsWorks = authorsWorks;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     @Override
     public String toString() {
-        return "Error 404 - " + message;
+        return firstName + " " + lastName;
     }
 }

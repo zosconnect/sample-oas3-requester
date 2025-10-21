@@ -132,20 +132,95 @@
       *         09 url2                          PIC X(100).
       * 
       *  
-      * This structure describes one instance of the data in Data Area
-      *  'authors-dataarea'.
-      *  01 RBK01Q01-authors.
+      * JSON schema keyword 'requestBody->owningDepartment' is
+      *  optional. The existence of the field is indicated by field
+      *  'owningDepartment-existence'.
+      *       06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
       * 
-      * Comments for field 'authors':
+      *  
+      *       06 owningDepartment.
+      * 
+      * Comments for field 'Xid':
       * This field represents the value of JSON schema keyword
-      *  'requestBody->authors'.
+      *  'requestBody->owningDepartment->id'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '5'.
+      * JSON schema keyword 'maxLength' value: '5'.
+      *         09 Xid                           PIC X(5).
+      * 
+      * Comments for field 'name':
+      * This field represents the value of JSON schema keyword
+      *  'requestBody->owningDepartment->name'.
       * JSON schema type: 'string'.
       * JSON schema keyword 'minLength' value: '0'.
       * JSON schema keyword 'maxLength' value: '40'.
       * This field contains a varying length array of characters or
       *  binary data.
-      *    03 authors-length                PIC S9999 COMP-5 SYNC.
-      *    03 authors                       PIC X(40).
+      *         09 name-length                   PIC S9999 COMP-5 SYNC.
+      *         09 name                          PIC X(40).
+      * 
+      * Comments for field 'contact':
+      * This field represents the value of JSON schema keyword
+      *  'requestBody->owningDepartment->contact'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *         09 contact-length                PIC S9999 COMP-5 SYNC.
+      *         09 contact                       PIC X(40).
+      * 
+      *  
+      * This structure describes one instance of the data in Data Area
+      *  'authors-dataarea'.
+      *  01 RBK01Q01-authors.
+      *    03 authors.
+      * 
+      *  
+      * JSON schema keyword 'requestBody->authors->firstName' is
+      *  optional. The existence of the field is indicated by field
+      *  'firstName-existence'.
+      *      06 firstName-existence           PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 firstName.
+      * 
+      * Comments for field 'firstName2':
+      * This field represents the value of JSON schema keyword
+      *  'requestBody->authors->firstName'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 firstName2-length             PIC S9999 COMP-5 SYNC.
+      *        09 firstName2                    PIC X(40).
+      * 
+      *  
+      * JSON schema keyword 'requestBody->authors->lastName' is
+      *  optional. The existence of the field is indicated by field
+      *  'lastName-existence'.
+      *      06 lastName-existence            PIC S9(9) COMP-5 SYNC.
+      * 
+      *  
+      *      06 lastName.
+      * 
+      * Comments for field 'lastName2':
+      * This field represents the value of JSON schema keyword
+      *  'requestBody->authors->lastName'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'minLength' value: '0'.
+      * JSON schema keyword 'maxLength' value: '40'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 lastName2-length              PIC S9999 COMP-5 SYNC.
+      *        09 lastName2                     PIC X(40).
+      * 
+      * Comments for field 'filler':
+      * This is a filler entry to ensure the correct padding for a
+      *  structure. These slack bytes do not contain any application
+      *  data.
+      *      06 filler                        PIC X(2).
       * 
       *  
       * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -187,7 +262,28 @@
                 09 url2-length                   PIC S9999 COMP-5 SYNC.
                 09 url2                          PIC X(100).
  
+              06 owningDepartment-existence    PIC S9(9) COMP-5 SYNC.
+ 
+              06 owningDepartment.
+                09 Xid                           PIC X(5).
+                09 name-length                   PIC S9999 COMP-5 SYNC.
+                09 name                          PIC X(40).
+                09 contact-length                PIC S9999 COMP-5 SYNC.
+                09 contact                       PIC X(40).
+ 
          01 RBK01Q01-authors.
-           03 authors-length                PIC S9999 COMP-5 SYNC.
-           03 authors                       PIC X(40).
+           03 authors.
+ 
+             06 firstName-existence           PIC S9(9) COMP-5 SYNC.
+ 
+             06 firstName.
+               09 firstName2-length             PIC S9999 COMP-5 SYNC.
+               09 firstName2                    PIC X(40).
+ 
+             06 lastName-existence            PIC S9(9) COMP-5 SYNC.
+ 
+             06 lastName.
+               09 lastName2-length              PIC S9999 COMP-5 SYNC.
+               09 lastName2                     PIC X(40).
+             06 filler                        PIC X(2).
  

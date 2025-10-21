@@ -26,6 +26,8 @@
      *      GARB - Get All Redbooks                                   *
      *      GRBK - Get Redbook                                        *
      *      CRBK - Create Redbook                                     *
+     *      PRBK - Patch Redbook                                      *
+     *      MRBK - Merge Redbook                                      *
      *                                                                *
      * Pass in via JCL APARM statement, E.g:                          *
      *    //RBKRUN EXEC PROC=IMSBATCH,                                *
@@ -51,8 +53,14 @@
     // API_INFO for Operation createRedbook
     %include RBK01I01;
 
-    // API_INFO for Operation getAllRedbooks
+    // API_INFO for Operation patchRedbook
     %include RBK02I01;
+
+    // API_INFO for Operation mergeRedbook
+    %include RBK03I01;
+
+    // API_INFO for Operation getAllRedbooks
+    %include RBK04I01;
 
     // Request structure for Operation getRedbook
     %include RBK00Q01;
@@ -60,8 +68,14 @@
     // Request structure for Operation createRedbook
     %include RBK01Q01;
 
-    // Request structure for Operation getAllRedbooks
+    // Request structure for Operation patchRedbook
     %include RBK02Q01;
+
+    // Request structure for Operation mergeRedbook
+    %include RBK03Q01;
+
+    // Request structure for Operation getAllRedbooks
+    %include RBK04Q01;
 
     // Response structure for Operation getRedbook
     %include RBK00P01;
@@ -69,8 +83,15 @@
     // Response structure for Operation createRedbook
     %include RBK01P01;
 
-    // Response structure for Operation getAllRedbooks
+    // Response structure for Operation patchRedbook
     %include RBK02P01;
+
+    // Response structure for Operation mergeRedbook
+    %include RBK03P01;
+
+    // Response structure for Operation getAllRedbooks
+    %include RBK04P01;
+
 
     // Holder of an API_INFO structure
   DCL 01 api_info,
@@ -161,7 +182,7 @@
      *----------------------------------------------------------------*/
     IF parm_length < 4 THEN DO;
        DISPLAY('PLEASE SPECIFY OPERATION TO CALL AS PARAMETER');
-       DISPLAY('VALID OPERATIONS ARE GARB, GRBK and CRBK');
+       DISPLAY('VALID OPERATIONS ARE GARB, GRBK, CRBK, PRBK and MRBK.');
        RETURN;
     END;
 
@@ -241,6 +262,14 @@
        ELSE IF operation = 'CRBK' THEN
           CALL cc_create_redbook;
 
+       // PRBK Title
+       ELSE IF operation = 'PRBK' THEN
+          CALL cd_patch_redbook;
+
+       // MRBK Title
+       ELSE IF operation = 'MRBK' THEN
+          CALL ce_merge_redbook;
+
        // Unknown request
        ELSE DO;
           DISPLAY('OPERATION ' || operation || ' UNKNOWN');
@@ -257,11 +286,11 @@
      *
      * Operation getAllRedbooks
      *
-     * Sets the content of the BAQBASE_RBK02Q01 Request structure
+     * Sets the content of the BAQBASE_RBK04Q01 Request structure
      * ready for the BAQEXEC Call. The call is then made to the
      * API End Point (EP) via BAQEXEC and the z/OS Connect server.
      *
-     * Upon success, the BAQBASE_RBK02P01 structure is returned
+     * Upon success, the BAQBASE_RBK04P01 structure is returned
      * and dependent of the EP HTTP Status Code a DATA AREA element
      * is addressed and processed.
      *----------------------------------------------------------------*/
@@ -271,8 +300,8 @@
           DISPLAY(operation || ' ca_get_all_redbooks Entry');
 
        // Prepare the request
-       BAQ_REQ_BASE_ADDRESS = ADDR(BAQBASE_RBK02Q01);
-       BAQ_REQ_BASE_LENGTH = SIZE(BAQBASE_RBK02Q01);
+       BAQ_REQ_BASE_ADDRESS = ADDR(BAQBASE_RBK04Q01);
+       BAQ_REQ_BASE_LENGTH = SIZE(BAQBASE_RBK04Q01);
 
        /*
         * For this request we want to get all Redbook Inventory
@@ -280,15 +309,15 @@
         * the author_existence flag to 0 to tell z/OS Connect that
         * the optional author parameter is not set.
         */
-       BAQBASE_RBK02Q01.author_existence = 0;
+       BAQBASE_RBK04Q01.author_existence = 0;
 
        /*
         * Call the API
         * Passing the address of the API_INFO structure required for the
-        * BAQEXEC call. Procedure x_exec is a reuseable routine that is
+        * BAQEXEC call. Procedure x_exec is a reusable routine that is
         * used for all API calls.
         */
-       api_info = BAQ_API_INFO_RBK02I01;
+       api_info = BAQ_API_INFO_RBK04I01;
        CALL x_exec;
 
        /*
@@ -323,7 +352,7 @@
         * The address of the returned BAQBASE structure is returned in
         * the BAQ_RESPONSE_AREA so set the structure to that address
         */
-        BAQBASE_RBK02P01_PTR = BAQ_RESP_BASE_ADDRESS;
+        BAQBASE_RBK04P01_PTR = BAQ_RESP_BASE_ADDRESS;
 
        /*
         * For this operation the OAS document defines two responses
@@ -347,7 +376,7 @@
         * response was received, let's check the NOTFOUND case first.
         */
        IF BAQ_RESP_STATUS_CODE = 404 THEN DO;
-          IF BAQBASE_RBK02P01.responseCode404_existence > 0 THEN DO;
+          IF BAQBASE_RBK04P01.responseCode404_existence > 0 THEN DO;
 
              /*
               * The Redbook API provided a RedbookNotFound response body
@@ -357,8 +386,8 @@
               * routines x_get_data_area_element and set the expected
               * length of the returned data in element_length.
               */
-             data_area_name = BAQBASE_RBK02P01.responseCode404_dataarea;
-             element_length = SIZE(RBK02P01_responseCode404);
+             data_area_name = BAQBASE_RBK04P01.responseCode404_dataarea;
+             element_length = SIZE(RBK04P01_responseCode404);
 
              CALL x_get_data_area_element(data_area_name, element,
                                           element_length);
@@ -368,21 +397,21 @@
 
              /*
               * BAQGETN has worked and returned the address of the Data
-              * Area that contains the RBK02P01_responseCode404 data
+              * Area that contains the RBK04P01_responseCode404 data
               * structure.  Lets address that and display the returned
               * message which should indicate that there are no
               * Redbooks in the repository.
               *
-              * The RBK02P01_responseCode404 also contains a dynamic
+              * The RBK04P01_responseCode404 also contains a dynamic
               * array Data Area of authors Redbooks, but for this
               * operation this array is not set
               */
 
-             RBK02P01_responseCode404_PTR = element;
+             RBK04P01_responseCode404_PTR = element;
              display_message = operation ||
                 ' API EP returned HTTP Status Code ' ||
                 BAQ_RESP_STATUS_CODE ||
-                '. MESSAGE ' || RBK02P01_responseCode404.message;
+                '. MESSAGE ' || RBK04P01_responseCode404.message;
 
              CALL x_write_response_msg;
           END;
@@ -408,12 +437,12 @@
         * we will use x_get_data_area_element to fetch each one in turn.
         */
        IF BAQ_RESP_STATUS_CODE = 200 THEN DO;
-          IF BAQBASE_RBK02P01.responseCode200_num > 0 THEN DO;
+          IF BAQBASE_RBK04P01.responseCode200_num > 0 THEN DO;
              display_message = operation ||
                 ' Redbook Inventory';
              CALL x_write_response_msg;
 
-             DO i = 1 TO BAQBASE_RBK02P01.responseCode200_num BY 1
+             DO i = 1 TO BAQBASE_RBK04P01.responseCode200_num BY 1
                       WHILE (rc = OK);
                 CALL caa_get_each_redbook(i);
              END;
@@ -444,8 +473,8 @@
           DISPLAY(operation ||
              ' caa_get_each_redbook(' || i || ') Entry');
 
-       data_area_name = BAQBASE_RBK02P01.responseCode200_dataarea;
-       element_length = SIZE(RBK02P01_responseCode200);
+       data_area_name = BAQBASE_RBK04P01.responseCode200_dataarea;
+       element_length = SIZE(RBK04P01_responseCode200);
 
        CALL x_get_data_area_element(data_area_name, element,
                                     element_length);
@@ -457,7 +486,7 @@
         * We have fetched the Redbook from the Data Area so set the
         * address of the 01 level data structure.
         */
-       RBK02P01_responseCode200_PTR = element;
+       RBK04P01_responseCode200_PTR = element;
 
        /*
         * For simplicity lets display the content of the Redbook data
@@ -471,7 +500,7 @@
           DISPLAY(operation || ' Redbook number ' || i);
 
        display_message = operation || ' Title ' ||
-          RBK02P01_responseCode200.title;
+          RBK04P01_responseCode200.title;
 
        CALL x_write_response_msg;
 
@@ -484,20 +513,20 @@
         * then the array would be inlined in the Redbook data
         * structure. But here we use a dynamic length array again.
         */
-       DO j = 1 TO RBK02P01_responseCode200.authors_num BY 1
+       DO j = 1 TO RBK04P01_responseCode200.authors_num BY 1
                 WHILE (rc = OK);
           CALL caaa_get_each_author(j);
        END;
 
        IF debug = 1 THEN
           DISPLAY(operation || ' Status ' ||
-                  RBK02P01_responseCode200.status);
+                  RBK04P01_responseCode200.status);
 
-       IF RBK02P01_responseCode200.publicationDate_existence > 0 THEN
+       IF RBK04P01_responseCode200.publicationDate_existence > 0 THEN
        DO;
           IF debug = 1 THEN
              DISPLAY(operation || ' Publication Date ' ||
-                     RBK02P01_responseCode200.publicationDate);
+                     RBK04P01_responseCode200.publicationDate);
        END;
 
        DISPLAY(operation);
@@ -521,8 +550,8 @@
           DISPLAY(operation ||
              ' caaa_get_each_author(' || j || ') Entry');
 
-       data_area_name = RBK02P01_responseCode200.authors_dataarea;
-       element_length = SIZE(RBK02P01_authors);
+       data_area_name = RBK04P01_responseCode200.authors_dataarea;
+       element_length = SIZE(RBK04P01_authors);
 
        CALL x_get_data_area_element(data_area_name, element,
                                     element_length);
@@ -534,14 +563,15 @@
         * We have fetched the Author from the Data Area so set the
         * address of the 01 level data structure.
         */
-       RBK02P01_authors_PTR = element;
+       RBK04P01_authors_PTR = element;
 
        IF debug = 1 THEN
           DISPLAY(operation || ' Author ' || j);
 
        IF debug = 1 THEN
           DISPLAY(operation || ' ' ||
-                  RBK02P01_authors.authors);
+                  RBK04P01_authors.firstName || ' ' ||
+                  RBK04P01_authors.lastName);
 
  caaa_999:
        IF debug = 1 THEN
@@ -578,12 +608,12 @@
        BAQBASE_RBK00Q01 = '';
 
        /*
-        * Now populate the fields of the request structure with the 
+        * Now populate the fields of the request structure with the
         * values for the new book which we are going to create
         */
 
        // Set the title
-       BAQBASE_RBK00Q01.title = 'Accelerate Mainframe Application ' 
+       BAQBASE_RBK00Q01.title = 'Accelerate Mainframe Application '
          || 'Modernization with Hybrid Cloud';
 
  cb_020:
@@ -665,16 +695,16 @@
               * from the Data Area so set the address
               */
              RBK00P01_responseCode404_PTR = element;
- 
+
              IF length(RBK00P01_responseCode404.message) > 1 THEN DO;
-             
+
                 display_message = operation ||
                   ' API EP returned HTTP Status Code ' ||
                   BAQ_RESP_STATUS_CODE ||
                   '. MESSAGE ' || RBK02P01_responseCode404.message;
 
                 CALL x_write_response_msg;
-                rc = FAILED; 
+                rc = FAILED;
                 GO TO cb_999;
              END;
           END;
@@ -710,11 +740,11 @@
              IF rc = FAILED THEN GO TO cb_999;
 
              /*
-              * We have fetched the Redbook from the Data Area so set 
+              * We have fetched the Redbook from the Data Area so set
               * the address of the 01 level Redbook data structure.
               */
              RBK00P01_responseCode200_PTR = element;
- 
+
              display_message = operation || ' Title ' ||
                   RBK00P01_responseCode200.title;
 
@@ -753,8 +783,8 @@
         */
        BAQBASE_RBK01Q01 = '';
 
-       /* 
-        * Now populate the fields of the request structure with the 
+       /*
+        * Now populate the fields of the request structure with the
         * values for the new book which we are going to create
         */
 
@@ -763,33 +793,33 @@
          || 'Mainframe Application Modernization with Hybrid Cloud';
 
        // Now populate the remaining fields of the book structure
-       BAQBASE_RBK01Q01.requestBody.title  = 
+       BAQBASE_RBK01Q01.requestBody.title  =
          BAQBASE_RBK01Q01.requestPathParameters.title;
-       
+
        BAQBASE_RBK01Q01.requestBody.status = 'PUBLISHED';
-       
+
        BAQBASE_RBK01Q01.requestBody.publicationDate_existence = 1;
-       BAQBASE_RBK01Q01.requestBody.publicationDate = 
+       BAQBASE_RBK01Q01.requestBody.publicationDate =
          '2023-03-31T00:00:00Z';
-       
+
        BAQBASE_RBK01Q01.requestBody.formNumber = 'REDP-5705-00';
-       
+
        BAQBASE_RBK01Q01.requestBody.documentType_existence = 1;
        BAQBASE_RBK01Q01.requestBody.documentType ='PDF';
-       
+
        BAQBASE_RBK01Q01.requestBody.sizeMB_existence = 1;
        BAQBASE_RBK01Q01.requestBody.sizeMB = 6.62;
 
        BAQBASE_RBK01Q01.requestBody.url_existence = 1;
-       BAQBASE_RBK01Q01.requestBody.url = 
+       BAQBASE_RBK01Q01.requestBody.url =
          'https://www.redbooks.ibm.com/redpapers/pdfs/redp5705.pdf';
-      
+
        BAQBASE_RBK01Q01.requestBody.authors_num = 10;
-       BAQBASE_RBK01Q01.requestBody.authors_dataarea = 
+       BAQBASE_RBK01Q01.requestBody.authors_dataarea =
          'AUTHOR-DATA-AREA';
 
  cc_020:
-       /* 
+       /*
         * We use BAQPUTN to add the authors to the book and this is
         * performed in a separate section.
         */
@@ -804,7 +834,7 @@
        BAQ_REQ_BASE_ADDRESS = ADDR(BAQBASE_RBK01Q01);
        BAQ_REQ_BASE_LENGTH = SIZE(BAQBASE_RBK01Q01);
 
-       /* 
+       /*
         * Passing the address of the API_INFO structure required for the
         * BAQEXEC call. Procedure x_exec is a reuseable routine that is
         * used for all API calls.
@@ -812,7 +842,7 @@
        api_info = BAQ_API_INFO_RBK01I01;
        CALL x_exec;
 
-       /* 
+       /*
         * Check that the call was successful, if not exit
         * Procedure x_exec has displayed the error responses
         */
@@ -834,16 +864,16 @@
 
  cc_040:
        /*
-        * z/OS Connect has successfully called the remote endpoint API 
-        * and the API has returned an HTTP status code that was defined 
-        * in the Open API document for the called operation. This could 
-        * be an error HTTP status code, but as long as it is defined in 
-        * the OAS document then z/OS Connect sees this as a successful 
-        * call so now we must address the returned base structure and 
+        * z/OS Connect has successfully called the remote endpoint API
+        * and the API has returned an HTTP status code that was defined
+        * in the Open API document for the called operation. This could
+        * be an error HTTP status code, but as long as it is defined in
+        * the OAS document then z/OS Connect sees this as a successful
+        * call so now we must address the returned base structure and
         * interrogate the returned responses in more detail
         *
         * The address of the returned BAQBASE structure is returned in
-        * the BAQ-RESPONSE-AREA so set the structure to that address 
+        * the BAQ-RESPONSE-AREA so set the structure to that address
         */
        BAQBASE_RBK01P01_PTR = BAQ_RESP_BASE_ADDRESS;
 
@@ -857,7 +887,7 @@
           CALL x_write_response_msg;
        END;
 
-       IF BAQ_RESP_STATUS_CODE >= 200 & 
+       IF BAQ_RESP_STATUS_CODE >= 200 &
           BAQ_RESP_STATUS_CODE < 300 THEN DO;
           display_message = operation ||
                 ' API EP returned HTTP Status Code ' ||
@@ -891,53 +921,83 @@
        data_area_name = BAQBASE_RBK01Q01.requestBody.authors_dataarea;
        element = ADDR(RBK01Q01_authors);
        element_length = SIZE(RBK01Q01_authors);
-      
+
        // Now add the authors to the request Data Area
-       RBK01Q01_authors.authors = 'Skyla Loomis';
+       RBK01Q01_authors.firstName = 'Skyla';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Loomis';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
 
-       RBK01Q01_authors.authors = 'Kyle Charlet';
-       CALL x_put_data_area_element(data_area_name, element,
-                                    element_length);  
-       IF rc = FAILED THEN GO TO cc_aa_999;
-      
-       RBK01Q01_authors.authors = 'Suman Gopinath';
-       CALL x_put_data_area_element(data_area_name, element,
-                                    element_length);
-       IF rc = FAILED THEN GO TO cc_aa_999;
-
-       RBK01Q01_authors.authors = 'Peter McCaffrey';
-       CALL x_put_data_area_element(data_area_name, element,
-                                    element_length);
-       IF rc = FAILED THEN GO TO cc_aa_999;
-       
-       RBK01Q01_authors.authors = 'Tim Brooks';
+       RBK01Q01_authors.firstName = 'Kyle';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Charlet';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
        IF rc = FAILED THEN GO TO cc_aa_999;
 
-       RBK01Q01_authors.authors = 'Juergen Holtz';
+       RBK01Q01_authors.firstName = 'Suman';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Gopinath';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
        IF rc = FAILED THEN GO TO cc_aa_999;
 
-       RBK01Q01_authors.authors = 'Bryant Panyarachun';
+       RBK01Q01_authors.firstName = 'Peter';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'McCaffrey';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
        IF rc = FAILED THEN GO TO cc_aa_999;
 
-       RBK01Q01_authors.authors = 'Purvi Patel';
+       RBK01Q01_authors.firstName = 'Tim';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Brooks';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
        IF rc = FAILED THEN GO TO cc_aa_999;
 
-       RBK01Q01_authors.authors = 'Mythili Venkatakrishnan';
+       RBK01Q01_authors.firstName = 'Juergen';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Holtz';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
        IF rc = FAILED THEN GO TO cc_aa_999;
 
-       RBK01Q01_authors.authors = 'Yichong Yu';
+       RBK01Q01_authors.firstName = 'Bryant';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Panyarachun';
+       RBK01Q01_authors.lastName_existence = 1;
+       CALL x_put_data_area_element(data_area_name, element,
+                                    element_length);
+       IF rc = FAILED THEN GO TO cc_aa_999;
+
+       RBK01Q01_authors.firstName = 'Purvi';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Patel';
+       RBK01Q01_authors.lastName_existence = 1;
+       CALL x_put_data_area_element(data_area_name, element,
+                                    element_length);
+       IF rc = FAILED THEN GO TO cc_aa_999;
+
+       RBK01Q01_authors.firstName = 'Mythili';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Venkatakrishnan';
+       RBK01Q01_authors.lastName_existence = 1;
+       CALL x_put_data_area_element(data_area_name, element,
+                                    element_length);
+       IF rc = FAILED THEN GO TO cc_aa_999;
+
+       RBK01Q01_authors.firstName = 'Yichong';
+       RBK01Q01_authors.firstName_existence = 1;
+       RBK01Q01_authors.lastName = 'Yu';
+       RBK01Q01_authors.lastName_existence = 1;
        CALL x_put_data_area_element(data_area_name, element,
                                     element_length);
        IF rc = FAILED THEN GO TO cc_aa_999;
@@ -947,6 +1007,806 @@
           DISPLAY(operation || ' ccaa_put_each_author Exit' || rc);
 
     END ccaa_put_each_author;
+
+    /*----------------------------------------------------------------*
+     * cd_patch_redbook
+     *
+     * Operation patchRedbook - RFC6902
+     *
+     * Sets the content of the BAQBASE_RBK02Q01 Request structure
+     * ready for the BAQEXEC Call. The call is then made to the
+     * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+     *
+     * Upon success, the BAQBASE_RBK02P01 structure is returned
+     * and dependent of the EP HTTP Status Code a DATA AREA element
+     * is got and processed.
+     *----------------------------------------------------------------*/
+    cd_patch_redbook: PROC;
+
+       IF debug = 1 THEN
+          DISPLAY(operation || ' cd_patch_redbook Entry');
+
+       BAQBASE_RBK02Q01.requestBody = '';
+
+       /*
+        * Using the PATCH method in an API requests that a server object
+        * is updated by a Patch Document on a field by field basis
+        * rather then a complete replacement as would happen if using
+        * the PUT method.
+        *
+        * This procedure will invoke the patchRedbook operation in the
+        * Redbook management API. Operation patchRedbook uses media-type
+        * application/json-patch+json which is defined by RFC 6902.
+        * This RFC (https://www.rfc-editor.org/rfc/rfc6902) defines
+        * the format of the patch document used to update the entity
+        * via the Rest API in a server.
+        *
+        * We will see in procedure ce_merge_redbook the use of a patch
+        * document that conforms to RFC 7396.
+        * This RFC (https://www.rfc-editor.org/rfc/rfc7396) defines
+        * a different patch document format and media-type
+        * application/merge-patch+json.
+        *
+        * The RFC have different advantages and disadvantages,
+        * z/OS Connect supports both standards and your API will
+        * choose which to employ via the OpenApi definition of the API.
+        *
+        * The patch document is constructed by z/OS Connect based on the
+        * settings made to the BAQBASE_RBK02Q01 request structure. The
+        * COBOL Copybook used for both RFC are similar, but the array
+        * support is limited in RFC 7396.
+        *
+        * Once z/OS Connect has constructed the patch document
+        * conforming to the requested media-type (RFC) from the binary
+        * COBOL structure this patch document is sent to the Rest API
+        * endpoint service. This is received at its path/Patch function
+        * and using appropriate function the patch document can be
+        * applied to an entity.  See method patchRedbook in the Java
+        * class RedbookResource.java for a Java example that uses
+        * Jakarta JsonPatch classes to update a Java Redbook object.
+        *
+        * In this procedure we are going to set up a request that will
+        * produce a patch document that will perform a number of updates
+        * on a Redbook object. So for Redbook
+        * 'ABCs of IBM zOS System Programming Volume 1' we are going
+        * to update the Redbook to represent a fictitious new version of
+        * the Redbook.
+        *
+        * 1. Update the URL of the Redbooks location.
+        * 2. Update the owning departments Contact.
+        * 3. Remove an author as the section has been replaced.
+        * 4. Add a new Author to the Authors array
+        * 5. Delete the size property as it is not used
+        * 6. Add a 'version' property dynamically and set it to 2.
+        *
+        * These updates show a selection of Patch goals and how we
+        * manipulate the operations Request structure to achieve these
+        * goals.
+        *
+        * Lets setup the Request structure BAQBASE-RBK02Q01 then
+        * make the call to z/OS Connect via the Host API verbs.
+        */
+
+       /*
+        * 1. Update the URL of the redbook location
+        *
+        * Each property defined in the JSON Schema object when
+        * translated to COBOL has a field of the same (or similar) name
+        * with the suffix _patch_operation for a simple field or sub
+        * structure or _patch_item for an array structure.
+        *
+        * In these fields we set the operation that we want to perform
+        * on a particular field, if a -patch-operation field contains a
+        * space then no update is made to the property on the Rest API
+        * server.  See Patch product documentation for full details.
+        *
+        * Set the value 'U' for update to the url_patch_operation field
+        * and set the new data.
+        */
+       BAQBASE_RBK02Q01.url_patch_operation = 'U';
+       BAQBASE_RBK02Q01.url = 'http://newurl';
+
+       /*
+        * 2. Update the owning departments Contact.
+        *
+        * owningDepartment is a property of type object so this is an
+        * example of updating an object within an object.
+        *
+        * Set the value 'U' for update to the contact-patch-operation
+        * field and set the new data for contact.
+        *
+        * If we wanted to update the whole owningDepartment we could
+        * set 'U' in the field ngDepartment-patch-operation and then
+        * set the data in each field and the whole property object
+        * will update.
+        *
+        * Note the owningDepartment-patch-operation field has
+        * been truncated as the field name is too long to fit. To
+        * shorten the -patch-operation to -pchop set the Requester
+        * Gradle plugin option shortSuffix: yes. The field will then
+        * generate as owningDepartment-pchop.  See the product
+        * documentation for details on all the suffixes affected by
+        * this option.
+        */
+        BAQBASE_RBK02Q01.contact_patch_operation = 'U';
+        BAQBASE_RBK02Q01.contact = 'A. Contact';
+
+       /*
+        * 3. Remove an author as the section has been replaced.
+        *
+        * The Author property is of type array and the Redbook has a
+        * number of authors. In this example update we want to remove
+        * author 'Luiz Fadel' from the Redbook.
+        *
+        * Any array update is controlled by a field suffixed _patch_item
+        * (or _pchitm if option shortSuffix is set to yes).
+        * For our Author array we want to remove the second author
+        * 'Luiz'. We set authors_patch_item to '2' to state we want to
+        * change the second array element.
+        *
+        * _patch_item fields contain either a single array item number
+        * or a list of array item numbers that are to be updated.
+        * Numbers can be specified as ranges. See the product
+        * documentation for full details.
+        *
+        * We set the authors-num field to 1 to state there is one array
+        * element that we want to process. Any -num field should equal
+        * the number of elements specified in the corresponding
+        * _patch_item field. e.g. if authors_patch_item was '1, 5-7'
+        * then authors_num would be 4.
+        *
+        * If we wanted to update the last name of the author we would
+        * set 'U' in the last-name-patch-operation field and supply a
+        * new name. Here we want to delete the entire Author item so we
+        * set each _patch_operation field in the sub structure to 'D' to
+        * state the entire array item is to be deleted.
+        */
+        BAQBASE_RBK02Q01.authors_patch_item = '2';
+        BAQBASE_RBK02Q01.authors_num = 1;
+        BAQBASE_RBK02Q01.authors_dataarea = "AUTHOR-DATA-AREA";
+
+        data_area_name = BAQBASE_RBK02Q01.requestBody.authors_dataarea;
+        element = ADDR(RBK02Q01_authors);
+        element_length = SIZE(RBK02Q01_authors);
+
+        RBK02Q01_authors = '';
+        RBK02Q01_authors.firstName_patch_operation = 'D';
+        RBK02Q01_authors.lastName_patch_operation = 'D';
+
+        CALL x_put_data_area_element(data_area_name, element,
+                                     element_length);
+        IF rc = FAILED THEN GO TO cd_999;
+
+       /*
+        * 4. Add a new Author to the Authors array
+        *
+        * We also want to add a new author to the array so we want to
+        * change the fields above slightly.  To specify a new array
+        * item we use the '+' symbol as the last element of the
+        * _patch_item list. So now we have set up the array to delete
+        * one author and add another.  When adding a new array element
+        * the _patch_operation fields do not need to be set to any
+        * value.
+        */
+        BAQBASE_RBK02Q01.authors_patch_item = '2,+';
+        BAQBASE_RBK02Q01.authors_num = 2;
+
+        RBK02Q01_authors = '';
+        RBK02Q01_authors.firstName = 'New';
+        RBK02Q01_authors.lastName = 'Author';
+
+        CALL x_put_data_area_element(data_area_name, element,
+                                     element_length);
+        IF rc = FAILED THEN GO TO cd_999;
+
+       /*
+        * 5. Delete the size property as it is not used
+        *
+        * To remove a property from an object we set its
+        * _patch_operation field to 'D' for delete.
+        */
+        BAQBASE_RBK02Q01.sizeMB_patch_operation = 'D';
+
+       /*
+        * 6. Add a 'version' property dynamically and set it to 2.
+        *
+        * To be able to add new properties dynamically to an existing
+        * object the objects schema must specify
+        * additionalProperties: true in the OpenApi operation
+        * RequestBody schema definition.
+        *
+        * This setting states the schema object can have extra
+        * properties that are not defined by the schema.  Typically
+        * these are stored in a Map or Dictionary defined in the Rest
+        * API server entity class.
+        *
+        * For PATCH the way we specify additional properties in COBOL is
+        * no different from a PUT or POST operation that supports
+        * additional properties, however the generated Patch document
+        * consumed by the Rest API is different.
+        */
+
+       /*
+        * We have now specified a number of field updates in the
+        * BAQBASE-RBK02Q01 Request structure we can now make the call to
+        * z/OS Connect via the Host API verbs to process the structure
+        * and call the endpoint Rest API with a Patch document which
+        * will be processed by the API.
+        *
+        * Here we have chosen to group a number of updates together and
+        * process in one call, if desired, each update could be done
+        * individually by setting the BAQBASE-RBK02Q01 fields then
+        * calling BAQEXEC to call z/OS Connect, then initialize the
+        * BAQBASE-RBK02Q01 structure again, update as appropriate and
+        * call BAQEXEC again.
+        */
+       BAQ_REQ_BASE_ADDRESS = ADDR(BAQBASE_RBK02Q01);
+       BAQ_REQ_BASE_LENGTH = SIZE(BAQBASE_RBK02Q01);
+       BAQBASE_RBK02Q01.requestPathParameters.title =
+                  'ABCs of IBM zOS System Programming Volume 1';
+
+ cd_020:
+       /*
+        * Call the API
+        * Passing the address of the API_INFO structure required for the
+        * BAQEXEC call. Section x_exec is a reusable routine that is
+        * used for all API calls.
+        */
+       api_info = BAQ_API_INFO_RBK02I01;
+       CALL x_exec;
+
+       /*
+        * Check that the call was successful, if not exit the section
+        * Routine x_exec has displayed the error responses
+        */
+       IF baq_rc = BAQ_ERROR THEN DO;
+          DISPLAY(operation || ' cd_patch_redbook BAQEXEC problem');
+          DISPLAY(SUBSTR(BAQ_ZCON_RETURN_MESSAGE,
+                         1, BAQ_ZCON_RETURN_MESSAGE_LEN));
+          rc = FAILED;
+          GO TO cd_999;
+       END;
+
+       /*
+        * The BAQHAPI has successfully called remote endpoint API and
+        * that API has returned a HTTP status code that was defined in
+        * the Open API document for the called operation.  This could be
+        * an error HTTP status code, but as long as it is defined in the
+        * OAS document then BAQHAPI sees this as a successful call so
+        * now we must address the returned base structure and
+        * interrogate the returned responses in more detail
+        *
+        * The address of the returned BAQBASE structure is returned in
+        * the BAQ_RESPONSE_AREA so set the structure to that address
+        */
+        BAQBASE_RBK02P01_PTR = BAQ_RESP_BASE_ADDRESS;
+
+       /*
+        * For this operation the OAS document defines two responses
+        * 200-OK and 404-NOTFOUND, if the remote endpoint application
+        * returns any other HTTP status code then a status of
+        * BAQ_WARNING is returned and the endpoint response is returned
+        * in BAQ_RESP_STATUS_MESSAGE, first 1024 characters.
+        *
+        * If we have reached here we know the remote endpoint status
+        * code is either 404-NOTFOUND or 200-OK. Depending on the status
+        * code this determines which Data Area has been returned. See
+        * z/OS connect documentation for details on what a Data Area is.
+        * In short it is an area of memory that is described by a
+        * generated 01 level data structure, it is dynamic in length and
+        * used to reference the returned data on a per HTTP status code
+        * bases and also for referencing dynamic length arrays.
+        */
+
+       /*
+        * Check the remote endpoint HTTP status code and check that a
+        * response was received, lets do the NOTFOUND case first.
+        */
+       IF BAQ_RESP_STATUS_CODE = 404 THEN DO;
+          IF BAQBASE_RBK02P01.responseCode404_existence > 0 THEN DO;
+
+             /*
+              * The Redbook API provided a RedbookNotFound response body
+              * in a Data Area, the name of that Data Area is located in
+              * responseCode404_dataarea in the BAQBASE data structure.
+              * Set this name in to data_area_name and use the common
+              * routines x_get_data_area_element and set the expected
+              * length of the returned data in element_length.
+              */
+             data_area_name = BAQBASE_RBK02P01.responseCode404_dataarea;
+             element_length = SIZE(RBK02P01_responseCode404);
+
+             CALL x_get_data_area_element(data_area_name, element,
+                                          element_length);
+
+             // If rc is failed the BAQGETN call failed
+             IF rc = FAILED THEN GO TO cd_999;
+
+             /*
+              * BAQGETN has worked and returned the address of the Data
+              * Area that contains the RBK02P01_responseCode404 data
+              * structure.  Lets address that and display the returned
+              * message which should indicate that there are no
+              * Red Books in the repository.
+              *
+              * The RBK02P01_responseCode404 also contains a dynamic
+              * array Data Area of authors Red Books, but for this
+              * operation this array is not set
+              */
+
+             RBK02P01_responseCode404_PTR = element;
+             display_message = operation ||
+                ' EXEC RESTful EP return HTTP Status Code ' ||
+                BAQ_RESP_STATUS_CODE ||
+                ' MESSAGE ' || RBK04P01_responseCode404.message;
+
+             CALL x_write_response_msg;
+          END;
+          ELSE DO;
+             /*
+              * 404 was returned but there is no RedbookNotFound
+              * response body
+              */
+             display_message = operation ||
+                ' EXEC RESTful EP return HTTP Status Code ' ||
+                BAQ_RESP_STATUS_CODE ||
+                ' NO Response Body';
+
+             CALL x_write_response_msg;
+          END;
+       END;
+
+       /*
+        * Process each returned Redbook. Rather than a single entity in
+        * the returned Data Area in this case the OAS response body is
+        * an array so rather than a '_existence' flag we have '_num'
+        * count that details how many elements exist in the array and
+        * we will use x_get_data_area_element to fetch each one in turn.
+        */
+       IF BAQ_RESP_STATUS_CODE = 200 THEN DO;
+          IF BAQBASE_RBK02P01.responseCode200_existence > 0 THEN DO;
+             display_message = operation ||
+                '  Patched Red Book received';
+             CALL x_write_response_msg;
+
+             data_area_name = BAQBASE_RBK02P01.responseCode200_dataarea;
+             element_length = SIZE(RBK02P01_responseCode200);
+
+             CALL x_get_data_area_element(data_area_name, element,
+                                          element_length);
+
+             // If rc is failed the BAQGETN call failed
+             IF rc = FAILED THEN GO TO cd_999;
+
+             RBK02P01_responseCode200_PTR = element;
+             display_message = operation ||
+                '  URL is now ' || RBK02P01_responseCode200.url;
+             CALL x_write_response_msg;
+
+             display_message = operation ||
+                '  Contact is now ' || RBK02P01_responseCode200.contact;
+             CALL x_write_response_msg;
+
+             display_message = operation ||
+                '  Number of authors is ' ||
+                RBK02P01_responseCode200.authors_num;
+             CALL x_write_response_msg;
+
+             DO i = 1 TO RBK02P01_responseCode200.authors_num BY 1;
+                data_area_name = RBK02P01_responseCode200.
+                                 authors_dataarea;
+                element_length = SIZE(RBK02P01_authors);
+
+                CALL x_get_data_area_element(data_area_name, element,
+                                             element_length);
+
+                IF rc = FAILED THEN GO TO cd_999;
+
+                RBK02P01_authors_PTR = element;
+
+               display_message = operation ||
+                 '  Author first name ' ||
+                  RBK02P01_authors.firstName;
+               CALL x_write_response_msg;
+
+               display_message = operation ||
+                 '  Author last name ' ||
+                 RBK02P01_authors.lastName;
+               CALL x_write_response_msg;
+             END;
+          END;
+          ELSE DO;
+             display_message = operation ||
+                ' EXEC RESTful EP - Redbook not returned';
+             CALL x_write_response_msg;
+          END;
+       END;
+
+ cd_999:
+       IF debug = 1 THEN
+          DISPLAY(operation || ' cd_patch_redbook Exit' || rc);
+
+    END cd_patch_redbook;
+
+    /*----------------------------------------------------------------*
+     * ce_merge_patchbook
+     *
+     * Operation mergeRedbook - RFC7396
+     *
+     * Sets the content of the BAQBASE_RBK03Q01 Request structure
+     * ready for the BAQEXEC Call. The call is then made to the
+     * RESTful End Point(EP) via BAQEXEC and the z/OS Connect server.
+     *
+     * Upon success, the BAQBASE_RBK03P01 structure is returned
+     * and dependent of the EP HTTP Status Code a DATA AREA element
+     * is got and processed.
+     *----------------------------------------------------------------*/
+    ce_merge_redbook: proc;
+
+       IF debug = 1 THEN
+          DISPLAY(operation || ' ce_merge_redbook Entry');
+
+       BAQBASE_RBK03Q01.requestBody = '';
+
+       /*
+        * Using the PATCH method in an API requests that a server object
+        * is updated by a Patch Document on a field by field basis
+        * rather then a complete replacement as would happen if using
+        * the PUTmethod.
+        *
+        * This procedure will invoke the mergeRedbook operation in the
+        * Redbook management API. Operation mergeRedbook uses media-type
+        * application/merge-patch+json which is defined by RFC 7396.
+        * This RFC (https://www.rfc-editor.org/rfc/rfc7396) defines
+        * the format of the patch document used to update the entity
+        * via the Rest API in a server.
+        *
+        * The patch document is constructed by z/OS Connect based on the
+        * settings made to the BAQBASE-RBK03Q01 request structure.
+        *
+        * Once z/OS Connect has constructed the patch document
+        * conforming to the requested media-type (RFC) from the binary
+        * COBOL structure this patch document is sent to the Rest API
+        * endpoint service. This is received at its path/Patch function
+        * and using appropriate function the patch document can be
+        * applied to an entity.  See method mergeRedbook in the Java
+        * class RedbookResource.java for a Java example that uses
+        * Jakarta JsonPatch classes to update a Java Redbook object.
+        *
+        * In this procedure we are going to set up a request that will
+        * produce a patch document that will perform a number of updates
+        * on a Redbook object. So for Redbook
+        * 'ABCs of IBM z/OS System Programming Volume 2' we are going
+        * to update the Redbook to represent a fictitious new version of
+        * the Redbook.
+        *
+        * 1. Update the URL of the Redbooks location.
+        * 2. Update the owning departments Contact.
+        * 3. Replace the Authors array.
+        * 4. Delete the size property as it is not used
+        * 5. Add a 'version' property dynamically and set it to 2.
+        *
+        * These updates show a selection of Patch goals and how we
+        * manipulate the operations Request structure to achieve these
+        * goals.
+        *
+        * Lets setup the Request structure BAQBASE_RBK03Q01 then
+        * make the call to z/OS Connect via the Host API verbs.
+        */
+
+       /*
+        * 1. Update the URL of the redbook location
+        *
+        * Each property defined in the JSON Schema object when
+        * translated to COBOL has a field of the same (or similar) name
+        * with the suffix _patch_operation for a simple field or sub
+        * structure or _patch_item for an array structure.
+        *
+        * In these fields we set the operation that we want to perform
+        * on a particular field, if a _patch_operation field contains a
+        * space then no update is made to the property on the Rest API
+        * server.  See Patch product documentation for full details.
+        *
+        * Set the value 'U' for update to the url_patch_operation field
+        * and set the new data.
+        */
+       BAQBASE_RBK03Q01.url_patch_operation = 'U';
+       BAQBASE_RBK03Q01.url = 'http://newurl';
+
+       /*
+        * 2. Update the owning departments Contact.
+        *
+        * owningDepartment is a property of type object so this is an
+        * example of updating an object within an object.
+        *
+        * Set the value 'U' for update to the contact_patch_operation
+        * field and set the new data for contact.
+        *
+        * If we wanted to update the whole owningDepartment we could
+        * set 'U' in the field ngDepartment_patch_operation and then
+        * set the data in each field and the whole property object
+        * will update.
+        *
+        * Note the owningDepartment_patch_operation field has
+        * been truncated as the field name is too long to fit. To
+        * shorten the _patch_operation to _pchop set the Requester
+        * Gradle plugin option shortSuffix: yes. The field will then
+        * generate as owningDepartment_pchop.  See the product
+        * documentation for details on all the suffixes affected by
+        * this option.
+        */
+        BAQBASE_RBK03Q01.contact_patch_operation = 'U';
+        BAQBASE_RBK03Q01.contact = 'A. Contact';
+
+       /*
+        * 3. Replace the Authors array
+        *
+        * With RFC 7396 the array manipulation capabilities are limited,
+        * the whole array property can be replaced or the whole array
+        * property can be deleted.
+        *
+        * Here we are going to supply new array content with a single
+        * author.
+        *
+        * In RFC 7396, like the non_array fields, the array has a
+        * correspond _patch_operation field, in this case
+        * authors_patch_operation.
+        *
+        * We set the authors_num field to 1 to state there is one array
+        * element in the replaced array content
+        */
+        BAQBASE_RBK03Q01.authors_patch_operation = 'U';
+        BAQBASE_RBK03Q01.authors_num = 1;
+        BAQBASE_RBK03Q01.authors_dataarea = "AUTHOR-DATA-AREA";
+
+        data_area_name = BAQBASE_RBK03Q01.requestBody.authors_dataarea;
+        element = ADDR(RBK03Q01_authors);
+        element_length = SIZE(RBK03Q01_authors);
+
+        RBK03Q01_authors = '';
+        RBK03Q01_authors.firstName = 'New';
+        RBK03Q01_authors.lastName = 'Author';
+
+        CALL x_put_data_area_element(data_area_name, element,
+                                     element_length);
+        IF rc = FAILED THEN GO TO ce_999;
+
+       /*
+        * 4. Delete the size property as it is not used
+        *
+        * To remove a property from an object we set its
+        * _patch_operation field to 'D' for delete.
+        */
+        BAQBASE_RBK03Q01.sizeMB_patch_operation = 'D';
+
+       /*
+        * 5. Add a 'version' property dynamically and set it to 2.
+        *
+        * To be able to add new properties dynamically to an existing
+        * object the objects schema must specify
+        * additionalProperties: true in the OpenApi operation
+        * RequestBody schema definition.
+        *
+        * This setting states the schema object can have extra
+        * properties that are not defined by the schema.  Typically
+        * these are stored in a Map or Dictionary defined in the Rest
+        * API server entity class.
+        *
+        * For PATCH the way we specify additional properties in COBOL is
+        * no different from a PUT or POST operation that supports
+        * additional properties, however the generated Patch document
+        * consumed by the Rest API is different.
+        */
+
+       /*
+        * We have now specified a number of field updates in the
+        * BAQBASE_RBK03Q01 Request structure we can now make the call to
+        * z/OS Connect via the Host API verbs to process the structure
+        * and call the endpoint Rest API with a Patch document which
+        * will be processed by the API.
+        *
+        * Here we have chosen to group a number of updates together and
+        * process in one call, if desired, each update could be done
+        * individually by setting the BAQBASE_RBK03Q01 fields then
+        * calling BAQEXEC to call z/OS Connect, then initialize the
+        * BAQBASE_RBK03Q01 structure again, update as appropriate and
+        * call BAQEXEC again.
+        */
+       BAQ_REQ_BASE_ADDRESS = ADDR(BAQBASE_RBK03Q01);
+       BAQ_REQ_BASE_LENGTH = SIZE(BAQBASE_RBK03Q01);
+       BAQBASE_RBK03Q01.requestPathParameters.title =
+                  'ABCs of IBM zOS System Programming Volume 1';
+
+ ce_020:
+       /*
+        * Call the API
+        * Passing the address of the API_INFO structure required for the
+        * BAQEXEC call. Section x_exec is a reusable routine that is
+        * used for all API calls.
+        */
+       api_info = BAQ_API_INFO_RBK03I01;
+       CALL x_exec;
+
+       /*
+        * Check that the call was successful, if not exit the section
+        * Routine x_exec has displayed the error responses
+        */
+       IF baq_rc = BAQ_ERROR THEN DO;
+          DISPLAY(operation || ' ce_merge_redbook BAQEXEC problem');
+          DISPLAY(SUBSTR(BAQ_ZCON_RETURN_MESSAGE,
+                         1, BAQ_ZCON_RETURN_MESSAGE_LEN));
+          rc = FAILED;
+          GO TO ce_999;
+       END;
+
+       IF baq_rc = BAQ_ERROR THEN DO;
+          DISPLAY(operation || ' ce_merge_redbook BAQEXEC problem');
+          DISPLAY(SUBSTR(BAQ_RESP_STATUS_MESSAGE,
+                         1, BAQ_RESP_STATUS_MESSAGE_LEN));
+          rc = FAILED;
+          GO TO ce_999;
+       END;
+
+       /*
+        * The BAQHAPI has successfully called remote endpoint API and
+        * that API has returned a HTTP status code that was defined in
+        * the Open API document for the called operation.  This could be
+        * an error HTTP status code, but as long as it is defined in the
+        * OAS document then BAQHAPI sees this as a successful call so
+        * now we must address the returned base structure and
+        * interrogate the returned responses in more detail
+        *
+        * The address of the returned BAQBASE structure is returned in
+        * the BAQ_RESPONSE_AREA so set the structure to that address
+        */
+        BAQBASE_RBK03P01_PTR = BAQ_RESP_BASE_ADDRESS;
+
+       /*
+        * For this operation the OAS document defines two responses
+        * 200-OK and 404-NOTFOUND, if the remote endpoint application
+        * returns any other HTTP status code then a status of
+        * BAQ_WARNING is returned and the endpoint response is returned
+        * in BAQ_RESP_STATUS_MESSAGE, first 1024 characters.
+        *
+        * If we have reached here we know the remote endpoint status
+        * code is either 404-NOTFOUND or 200-OK. Depending on the status
+        * code this determines which Data Area has been returned. See
+        * z/OS connect documentation for details on what a Data Area is.
+        * In short it is an area of memory that is described by a
+        * generated 01 level data structure, it is dynamic in length and
+        * used to reference the returned data on a per HTTP status code
+        * bases and also for referencing dynamic length arrays.
+        */
+
+       /*
+        * Check the remote endpoint HTTP status code and check that a
+        * response was received, lets do the NOTFOUND case first.
+        */
+       IF BAQ_RESP_STATUS_CODE = 404 THEN DO;
+          IF BAQBASE_RBK03P01.responseCode404_existence > 0 THEN DO;
+
+             /*
+              * The Redbook API provided a RedbookNotFound response body
+              * in a Data Area, the name of that Data Area is located in
+              * responseCode404_dataarea in the BAQBASE data structure.
+              * Set this name in to data_area_name and use the common
+              * routines x_get_data_area_element and set the expected
+              * length of the returned data in element_length.
+              */
+             data_area_name = BAQBASE_RBK03P01.responseCode404_dataarea;
+             element_length = SIZE(RBK03P01_responseCode404);
+
+             CALL x_get_data_area_element(data_area_name, element,
+                                          element_length);
+
+             // If rc is failed the BAQGETN call failed
+             IF rc = FAILED THEN GO TO ce_999;
+
+             /*
+              * BAQGETN has worked and returned the address of the Data
+              * Area that contains the RBK03P01_responseCode404 data
+              * structure.  Lets address that and display the returned
+              * message which should indicate that there are no
+              * Red Books in the repository.
+              *
+              * The RBK03P01_responseCode404 also contains a dynamic
+              * array Data Area of authors Red Books, but for this
+              * operation this array is not set
+              */
+
+             RBK03P01_responseCode404_PTR = element;
+             display_message = operation ||
+                ' EXEC RESTful EP return HTTP Status Code ' ||
+                BAQ_RESP_STATUS_CODE ||
+                ' MESSAGE ' || RBK04P01_responseCode404.message;
+
+             CALL x_write_response_msg;
+          END;
+          ELSE DO;
+             /*
+              * 404 was returned but there is no RedbookNotFound
+              * response body
+              */
+             display_message = operation ||
+                ' EXEC RESTful EP return HTTP Status Code ' ||
+                BAQ_RESP_STATUS_CODE ||
+                ' NO Response Body';
+
+             CALL x_write_response_msg;
+          END;
+       END;
+
+       /*
+        * Process each returned Redbook. Rather than a single entity in
+        * the returned Data Area in this case the OAS response body is
+        * an array so rather than a '_existence' flag we have '_num'
+        * count that details how many elements exist in the array and
+        * we will use x_get_data_area_element to fetch each one in turn.
+        */
+       IF BAQ_RESP_STATUS_CODE = 200 THEN DO;
+          IF BAQBASE_RBK03P01.responseCode200_existence > 0 THEN DO;
+             display_message = operation ||
+                '  Patched Red Book received';
+             CALL x_write_response_msg;
+
+             data_area_name = BAQBASE_RBK03P01.responseCode200_dataarea;
+             element_length = SIZE(RBK03P01_responseCode200);
+
+             CALL x_get_data_area_element(data_area_name, element,
+                                          element_length);
+
+             // If rc is failed the BAQGETN call failed
+             IF rc = FAILED THEN GO TO ce_999;
+
+             RBK03P01_responseCode200_PTR = element;
+             display_message = operation ||
+                '  URL is now ' || RBK03P01_responseCode200.url;
+             CALL x_write_response_msg;
+
+             display_message = operation ||
+                '  Contact is now ' || RBK03P01_responseCode200.contact;
+             CALL x_write_response_msg;
+
+             display_message = operation ||
+                '  Number of authors is ' ||
+                RBK03P01_responseCode200.authors_num;
+             CALL x_write_response_msg;
+
+             DO i = 1 TO RBK03P01_responseCode200.authors_num BY 1;
+                data_area_name = RBK03P01_responseCode200.
+                                 authors_dataarea;
+                element_length = SIZE(RBK03P01_authors);
+
+                CALL x_get_data_area_element(data_area_name, element,
+                                             element_length);
+
+                IF rc = FAILED THEN GO TO ce_999;
+
+                RBK03P01_authors_PTR = element;
+
+               display_message = operation ||
+                 '  Author first name ' ||
+                  RBK03P01_authors.firstName;
+               CALL x_write_response_msg;
+
+               display_message = operation ||
+                 '  Author last name ' ||
+                 RBK03P01_authors.lastName;
+               CALL x_write_response_msg;
+             END;
+          END;
+          ELSE DO;
+             display_message = operation ||
+                ' EXEC RESTful EP - Redbook not returned';
+             CALL x_write_response_msg;
+          END;
+       END;
+
+ ce_999:
+       IF debug = 1 THEN
+          DISPLAY(operation || ' ce_merge_redbook Exit' || rc);
+
+    END ce_merge_redbook;
 
     /*----------------------------------------------------------------*
      * x_init
@@ -1075,15 +1935,15 @@
    /*----------------------------------------------------------------*
      * x_put_data_area_element
      *
-     * Puts a Data Element in to the Data Area named in the variable 
-     * data_area_name using address element_ptr and length 
+     * Puts a Data Element in to the Data Area named in the variable
+     * data_area_name using address element_ptr and length
      * element_length.
-     * 
+     *
      * Calls BAQPUTN (Put Next) which returns baq_rc.
      *----------------------------------------------------------------*/
     x_put_data_area_element: PROC(data_area_name, element_ptr,
                                   element_length);
-       
+
        DCL data_area_name CHAR(16);
        DCL element_ptr PTR;
        DCL element_length fixed bin(31);
@@ -1128,9 +1988,9 @@
     /*----------------------------------------------------------------*
      * x_get_data_area_element
      *
-     * Gets a Data Element from the Data Area named in the variable 
+     * Gets a Data Element from the Data Area named in the variable
      * data_area_name using length element_length.
-     * 
+     *
      * Calls BAQGETN (Get Next) which sets element_ptr to the address
      * of the data element retrieved.
      *----------------------------------------------------------------*/

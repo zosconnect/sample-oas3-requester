@@ -1,6 +1,6 @@
  /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  |    <* This file contains the generated language structure(s) for
- |        response JSON schema 'getAllRedbooks_response.json'.
+ |        response JSON schema 'patchRedbook_response.json'.
  |       This structure was generated using 'DFHJS2LS' at mapping
  |        level '5.0'. *>
  |  
@@ -9,14 +9,14 @@
  | 
  | 
  |      <* Data area 'responseCode200_dataarea' contains
- |          'responseCode200_num' instances of structure
+ |          'responseCode200_existence' instances of structure
  |          'RBK02P01_responseCode200', each of which represents an
  |          instance of JSON schema keyword 'responseCode200'. The
  |          Data area must be read from and written to in BIT mode.
  |         
  |         There should be at least '0' instance(s).
  |         There is no maximum number of instances. *>
- |     03 responseCode200_num            UNSIGNED FIXED BINARY(32)
+ |     03 responseCode200_existence      UNSIGNED FIXED BINARY(32)
  |     UNALIGNED,
  |     03 responseCode200_dataarea       CHAR(16),
  | 
@@ -152,22 +152,88 @@
  |         JSON schema keyword 'maxLength' value: '100'.
  |         This field contains a varying length array of characters
  |          or binary data. *>
- |      06 url                            CHAR(100) VARYING UNALIGNED
+ |      06 url                            CHAR(100) VARYING UNALIGNED,
+ | 
+ |  
+ |      <* JSON schema keyword 'responseCode200->owningDepartment'
+ |          is optional. The existence of the field is indicated by
+ |          field 'owningDepartment_existence'. *>
+ |      06 owningDepartment_existence     UNSIGNED FIXED BINARY(32)
+ |     UNALIGNED,
+ | 
+ |  
+ |      06 owningDepartment,
+ | 
+ |        <* Comments for field 'id':
+ |           This field represents the value of JSON schema keyword
+ |            'responseCode200->owningDepartment->id'.
+ |           JSON schema type: 'string'.
+ |           JSON schema keyword 'minLength' value: '5'.
+ |           JSON schema keyword 'maxLength' value: '5'. *>
+ |        09 id                             CHAR(5),
+ | 
+ |        <* Comments for field 'name':
+ |           This field represents the value of JSON schema keyword
+ |            'responseCode200->owningDepartment->name'.
+ |           JSON schema type: 'string'.
+ |           JSON schema keyword 'minLength' value: '0'.
+ |           JSON schema keyword 'maxLength' value: '40'.
+ |           This field contains a varying length array of
+ |            characters or binary data. *>
+ |        09 name                           CHAR(40) VARYING UNALIGNED,
+ | 
+ |        <* Comments for field 'contact':
+ |           This field represents the value of JSON schema keyword
+ |            'responseCode200->owningDepartment->contact'.
+ |           JSON schema type: 'string'.
+ |           JSON schema keyword 'minLength' value: '0'.
+ |           JSON schema keyword 'maxLength' value: '40'.
+ |           This field contains a varying length array of
+ |            characters or binary data. *>
+ |        09 contact                        CHAR(40) VARYING UNALIGNED
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'authors_dataarea'. *>
  |  Dcl RBK02P01_authors_PTR PTR
  |  Dcl 01 RBK02P01_authors BASED(RBK02P01_authors_PTR),
+ |    03 authors,
  | 
- |    <* Comments for field 'authors':
- |       This field represents the value of JSON schema keyword
- |        'responseCode200->authors'.
- |       JSON schema type: 'string'.
- |       JSON schema keyword 'minLength' value: '0'.
- |       JSON schema keyword 'maxLength' value: '40'.
- |       This field contains a varying length array of characters
- |        or binary data. *>
- |    03 authors                        CHAR(40) VARYING UNALIGNED
+ |  
+ |      <* JSON schema keyword
+ |          'responseCode200->authors->firstName' is optional. The
+ |          existence of the field is indicated by field
+ |          'firstName_existence'. *>
+ |      06 firstName_existence            UNSIGNED FIXED BINARY(32)
+ |     UNALIGNED,
+ | 
+ |  
+ |      <* Comments for field 'firstName':
+ |         This field represents the value of JSON schema keyword
+ |          'responseCode200->authors->firstName'.
+ |         JSON schema type: 'string'.
+ |         JSON schema keyword 'minLength' value: '0'.
+ |         JSON schema keyword 'maxLength' value: '40'.
+ |         This field contains a varying length array of characters
+ |          or binary data. *>
+ |      06 firstName                      CHAR(40) VARYING UNALIGNED,
+ | 
+ |  
+ |      <* JSON schema keyword 'responseCode200->authors->lastName'
+ |          is optional. The existence of the field is indicated by
+ |          field 'lastName_existence'. *>
+ |      06 lastName_existence             UNSIGNED FIXED BINARY(32)
+ |     UNALIGNED,
+ | 
+ |  
+ |      <* Comments for field 'lastName':
+ |         This field represents the value of JSON schema keyword
+ |          'responseCode200->authors->lastName'.
+ |         JSON schema type: 'string'.
+ |         JSON schema keyword 'minLength' value: '0'.
+ |         JSON schema keyword 'maxLength' value: '40'.
+ |         This field contains a varying length array of characters
+ |          or binary data. *>
+ |      06 lastName                       CHAR(40) VARYING UNALIGNED
  |  
  |    <* This structure describes one instance of the data in Data
  |        Area 'responseCode404_dataarea'. *>
@@ -216,16 +282,16 @@
  |      06 title                          CHAR(80) VARYING UNALIGNED,
  | 
  |  
- |      <* Data area 'authors2_dataarea' contains 'authors2_num'
- |          instances of structure 'RBK02P01_authors2', each of
+ |      <* Data area 'authors3_dataarea' contains 'authors3_num'
+ |          instances of structure 'RBK02P01_authors3', each of
  |          which represents an instance of JSON schema keyword
  |          'responseCode404->authorsBooks->authors'. The Data area
  |          must be read from and written to in BIT mode.
  |         There should be at least '0' instance(s).
  |         There should be at most '20' instance(s). *>
- |      06 authors2_num                   UNSIGNED FIXED BINARY(32)
+ |      06 authors3_num                   UNSIGNED FIXED BINARY(32)
  |     UNALIGNED,
- |      06 authors2_dataarea              CHAR(16),
+ |      06 authors3_dataarea              CHAR(16),
  | 
  |  
  |      <* Comments for field 'status':
@@ -317,22 +383,93 @@
  |         JSON schema keyword 'maxLength' value: '100'.
  |         This field contains a varying length array of characters
  |          or binary data. *>
- |      06 url                            CHAR(100) VARYING UNALIGNED
+ |      06 url                            CHAR(100) VARYING UNALIGNED,
+ | 
+ |  
+ |      <* JSON schema keyword
+ |          'responseCode404->authorsBooks->owningDepartment' is
+ |          optional. The existence of the field is indicated by
+ |          field 'owningDepartment_existence'. *>
+ |      06 owningDepartment_existence     UNSIGNED FIXED BINARY(32)
+ |     UNALIGNED,
+ | 
+ |  
+ |      06 owningDepartment3,
+ | 
+ |        <* Comments for field 'id':
+ |           This field represents the value of JSON schema keyword
+ |            'responseCode404->authorsBooks->owningDepartment->id'.
+ |           
+ |           JSON schema type: 'string'.
+ |           JSON schema keyword 'minLength' value: '5'.
+ |           JSON schema keyword 'maxLength' value: '5'. *>
+ |        09 id                             CHAR(5),
+ | 
+ |        <* Comments for field 'name':
+ |           This field represents the value of JSON schema keyword
+ |            'responseCode404->authorsBooks->owningDepartment->name
+ |           '.
+ |           JSON schema type: 'string'.
+ |           JSON schema keyword 'minLength' value: '0'.
+ |           JSON schema keyword 'maxLength' value: '40'.
+ |           This field contains a varying length array of
+ |            characters or binary data. *>
+ |        09 name                           CHAR(40) VARYING UNALIGNED,
+ | 
+ |        <* Comments for field 'contact':
+ |           This field represents the value of JSON schema keyword
+ |            'responseCode404->authorsBooks->owningDepartment->cont
+ |           act'.
+ |           JSON schema type: 'string'.
+ |           JSON schema keyword 'minLength' value: '0'.
+ |           JSON schema keyword 'maxLength' value: '40'.
+ |           This field contains a varying length array of
+ |            characters or binary data. *>
+ |        09 contact                        CHAR(40) VARYING UNALIGNED
  |  
  |    <* This structure describes one instance of the data in Data
- |        Area 'authors2_dataarea'. *>
- |  Dcl RBK02P01_authors2_PTR PTR
- |  Dcl 01 RBK02P01_authors2 BASED(RBK02P01_authors2_PTR),
+ |        Area 'authors3_dataarea'. *>
+ |  Dcl RBK02P01_authors3_PTR PTR
+ |  Dcl 01 RBK02P01_authors3 BASED(RBK02P01_authors3_PTR),
+ |    03 authors3,
  | 
- |    <* Comments for field 'authors':
- |       This field represents the value of JSON schema keyword
- |        'responseCode404->authorsBooks->authors'.
- |       JSON schema type: 'string'.
- |       JSON schema keyword 'minLength' value: '0'.
- |       JSON schema keyword 'maxLength' value: '40'.
- |       This field contains a varying length array of characters
- |        or binary data. *>
- |    03 authors                        CHAR(40) VARYING UNALIGNED
+ |  
+ |      <* JSON schema keyword
+ |          'responseCode404->authorsBooks->authors->firstName' is
+ |          optional. The existence of the field is indicated by
+ |          field 'firstName2_existence'. *>
+ |      06 firstName2_existence           UNSIGNED FIXED BINARY(32)
+ |     UNALIGNED,
+ | 
+ |  
+ |      <* Comments for field 'firstName':
+ |         This field represents the value of JSON schema keyword
+ |          'responseCode404->authorsBooks->authors->firstName'.
+ |         JSON schema type: 'string'.
+ |         JSON schema keyword 'minLength' value: '0'.
+ |         JSON schema keyword 'maxLength' value: '40'.
+ |         This field contains a varying length array of characters
+ |          or binary data. *>
+ |      06 firstName                      CHAR(40) VARYING UNALIGNED,
+ | 
+ |  
+ |      <* JSON schema keyword
+ |          'responseCode404->authorsBooks->authors->lastName' is
+ |          optional. The existence of the field is indicated by
+ |          field 'lastName2_existence'. *>
+ |      06 lastName2_existence            UNSIGNED FIXED BINARY(32)
+ |     UNALIGNED,
+ | 
+ |  
+ |      <* Comments for field 'lastName':
+ |         This field represents the value of JSON schema keyword
+ |          'responseCode404->authorsBooks->authors->lastName'.
+ |         JSON schema type: 'string'.
+ |         JSON schema keyword 'minLength' value: '0'.
+ |         JSON schema keyword 'maxLength' value: '40'.
+ |         This field contains a varying length array of characters
+ |          or binary data. *>
+ |      06 lastName                       CHAR(40) VARYING UNALIGNED
  |  
  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
  
@@ -340,7 +477,7 @@
     Dcl BAQBASE_RBK02P01_PTR PTR;
     Dcl 01 BAQBASE_RBK02P01 BASED(BAQBASE_RBK02P01_PTR),
 
-       03 responseCode200_num            UNSIGNED FIXED BINARY(32)
+       03 responseCode200_existence      UNSIGNED FIXED BINARY(32)
           UNALIGNED,
        03 responseCode200_dataarea       CHAR(16),
 
@@ -381,11 +518,29 @@
         06 url_existence                  UNSIGNED FIXED BINARY(32)
           UNALIGNED,
  
-        06 url                            CHAR(100) VARYING UNALIGNED;
+        06 url                            CHAR(100) VARYING UNALIGNED,
+ 
+        06 owningDepartment_existence     UNSIGNED FIXED BINARY(32)
+          UNALIGNED,
+ 
+        06 owningDepartment,
+          09 id                             CHAR(5),
+          09 name                           CHAR(40) VARYING UNALIGNED,
+          09 contact                        CHAR(40) VARYING UNALIGNED;
  
     Dcl RBK02P01_authors_PTR PTR;
     Dcl 01 RBK02P01_authors BASED(RBK02P01_authors_PTR),
-      03 authors                        CHAR(40) VARYING UNALIGNED;
+      03 authors,
+ 
+        06 firstName_existence            UNSIGNED FIXED BINARY(32)
+          UNALIGNED,
+ 
+        06 firstName                      CHAR(40) VARYING UNALIGNED,
+ 
+        06 lastName_existence             UNSIGNED FIXED BINARY(32)
+          UNALIGNED,
+ 
+        06 lastName                       CHAR(40) VARYING UNALIGNED;
  
     Dcl RBK02P01_responseCode404_PTR PTR;
     Dcl 01 RBK02P01_responseCode404
@@ -403,9 +558,9 @@
       03 authorsBooks,
         06 title                          CHAR(80) VARYING UNALIGNED,
  
-        06 authors2_num                   UNSIGNED FIXED BINARY(32)
+        06 authors3_num                   UNSIGNED FIXED BINARY(32)
           UNALIGNED,
-        06 authors2_dataarea              CHAR(16),
+        06 authors3_dataarea              CHAR(16),
  
         06 status                         CHAR(9) VARYING UNALIGNED,
         06 formNumber                     CHAR(12),
@@ -428,9 +583,27 @@
         06 url2_existence                 UNSIGNED FIXED BINARY(32)
           UNALIGNED,
  
-        06 url                            CHAR(100) VARYING UNALIGNED;
+        06 url                            CHAR(100) VARYING UNALIGNED,
  
-    Dcl RBK02P01_authors2_PTR PTR;
-    Dcl 01 RBK02P01_authors2 BASED(RBK02P01_authors2_PTR),
-      03 authors                        CHAR(40) VARYING UNALIGNED;
+        06 owningDepartment_existence     UNSIGNED FIXED BINARY(32)
+          UNALIGNED,
+ 
+        06 owningDepartment3,
+          09 id                             CHAR(5),
+          09 name                           CHAR(40) VARYING UNALIGNED,
+          09 contact                        CHAR(40) VARYING UNALIGNED;
+ 
+    Dcl RBK02P01_authors3_PTR PTR;
+    Dcl 01 RBK02P01_authors3 BASED(RBK02P01_authors3_PTR),
+      03 authors3,
+ 
+        06 firstName2_existence           UNSIGNED FIXED BINARY(32)
+          UNALIGNED,
+ 
+        06 firstName                      CHAR(40) VARYING UNALIGNED,
+ 
+        06 lastName2_existence            UNSIGNED FIXED BINARY(32)
+          UNALIGNED,
+ 
+        06 lastName                       CHAR(40) VARYING UNALIGNED;
  

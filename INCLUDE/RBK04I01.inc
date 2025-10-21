@@ -2,7 +2,7 @@
  | This file contains the generated API information structure
  | which is passed to the Host API via the BAQEXEC call.
  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-     Dcl 1 BAQ_API_INFO_RBK02I01,
+     Dcl 1 BAQ_API_INFO_RBK04I01,
         3 BAQ_API_INFO_EYE            CHAR(4) INIT('BAQA'),
         3 BAQ_API_INFO_LENGTH         FIXED BIN(32) ALIGNED
           INIT(1311) UNSIGNED,
@@ -15,18 +15,18 @@
         3 BAQ_API_NAME_LEN            FIXED BIN(32) ALIGNED
           INIT(13) UNSIGNED,
         3 BAQ_API_PATH                CHAR(255)
-          INIT('%2Fredbook%2F%7Btitle%7D'),
+          INIT('%2Fredbooks'),
         3 BAQ_API_PATH_LEN            FIXED BIN(32) ALIGNED
-          INIT(24) UNSIGNED,
+          INIT(11) UNSIGNED,
         3 BAQ_API_METHOD              CHAR(255)
-          INIT('PATCH'),
+          INIT('GET'),
         3 BAQ_API_METHOD_LEN          FIXED BIN(32) ALIGNED
-          INIT(5) UNSIGNED,
+          INIT(3) UNSIGNED,
         3 BAQ_API_OPERATION           CHAR(255)
-          INIT('patchRedbook'),
+          INIT('getAllRedbooks'),
         3 BAQ_API_OPERATION_LEN       FIXED BIN(32) ALIGNED
-          INIT(12) UNSIGNED,
+          INIT(14) UNSIGNED,
         3 BAQ_API_MEDIA_TYPE          CHAR(255)
-          INIT('application/json-patch+json'),
+          INIT(''),
         3 BAQ_API_MEDIA_TYPE_LEN      FIXED BIN(32) ALIGNED
-          INIT(27) UNSIGNED;
+          INIT(0) UNSIGNED;
