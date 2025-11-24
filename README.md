@@ -57,6 +57,26 @@ An object schema with properties relating to IBM Redbook metadata.
 ### RedbookNotFound
 A simple object schema with a String message used to denote a Redbook is not found and an array of Redbook objects that the supplied author has written.
 
+
+## Understanding the Redbook information API endpoint application
+This Redbook API requester sample demonstrates a simple IBM Redbook information application, called `com.ibm.zosconnect.redbook.app`. The application is implemented in Java and hosted in Liberty. `com.ibm.zosconnect.redbook.app` is a JAX-RS Java™ application that receives REST requests with parameters and JSON request payloads, and returns responses in JSON format. It supports three operations defined in the redbookapi.yaml OpenAPI 3.0 document.
+
+The application is constructed from the following classes:
+- `RedbookApp.java`
+    - This is a JAX-RS Application instance that defines the Path processing resource classes.
+- `Author.java`
+    - A model class that represents a single Author of a Redbook.
+- `OwningDepartment.java`
+    - A model class that represents the department that owns the Redbook.
+- `Redbook.java`
+    - A model class that represents the OpenAPI schema Redbook and contains the data instances for that schema.
+- `RedbookNotFound.java`
+    - A model class that represents the OpenAPI schema `RedbookNotFound` and contains the data instances for that schema.
+- `RedbooksResource.java`
+    - A JAX-RS class that accepts a `GET` method on Path /redbooks that starts method `getAllRedbooks` and returns an array of Redbook model objects. JAX-RS converts the Redbook model objects to JSON. This class also acts as the data repository for the RedBook inventory. This inventory is a `Map of 10 Red Books`. There is also a secondary `Map of Red Books` written by the same author.
+- `RedbookResource.java`
+    - A JAX-RS class that the process requests to /redbook/{title} for methods `GET `and `POST`. These start methods `getRedbook` and `createRedbook` use the Redbook model class and RedbookNotFound model class. The Redbook inventory is acquired from class RedbooksResource.
+
 ## CICS Resources
 ### BAQHRBKC CICS COBOL or PL/I program
 The CICS COBOL program BAQHRBKC.cbl, or the CICS PL/I program BAQHRBKC.pli is called for three transactions that then call the three different operations on the remote API endpoint.
