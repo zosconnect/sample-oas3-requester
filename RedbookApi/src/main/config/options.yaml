@@ -1,3 +1,4 @@
+projectType: requester
 language: COBOL
 requesterPrefix: RBK
 requesterExtension: cpy
